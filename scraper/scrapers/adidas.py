@@ -11,21 +11,20 @@ from scrapers.filters import should_keep
 
 
 CATEGORIES = [
-    {
-        "name": "Men Shoes",
-        "url_path": "herren-schuhe",
-        "taxonomy_slug": "schuhe",   # matches plp-app/api/taxonomy/{slug}
-        "gender": "men",
-    },
-    {
-        "name": "Women Shoes",
-        "url_path": "damen-schuhe",
-        "taxonomy_slug": "damen-schuhe",
-        "gender": "women",
-    },
+    {"name": "Men Shoes",           "url_path": "herren-schuhe",            "gender": "men"},
+    {"name": "Men Running Shoes",   "url_path": "herren-laufschuhe",         "gender": "men"},
+    {"name": "Men Originals Shoes", "url_path": "herren-originals-schuhe",   "gender": "men"},
+    {"name": "Men Training Shoes",  "url_path": "herren-trainingsschuhe",    "gender": "men"},
+    {"name": "Men Tennis Shoes",    "url_path": "herren-tennisschuhe",       "gender": "men"},
+    {"name": "Women Shoes",           "url_path": "damen-schuhe",            "gender": "women"},
+    {"name": "Women Running Shoes",   "url_path": "damen-laufschuhe",        "gender": "women"},
+    {"name": "Women Originals Shoes", "url_path": "damen-originals-schuhe",  "gender": "women"},
+    {"name": "Women Training Shoes",  "url_path": "damen-trainingsschuhe",   "gender": "women"},
+    {"name": "Women Tennis Shoes",    "url_path": "damen-tennisschuhe",      "gender": "women"},
 ]
 
-_TAXONOMY_RE = re.compile(r"plp-app/api/taxonomy/", re.I)
+# Catch initial taxonomy call AND scroll-triggered pagination/search calls
+_API_RE = re.compile(r"(?:plp-app/api/taxonomy/|plp-app/api/products|api/products/search)", re.I)
 
 
 def _rand_delay(lo: float = 0.5, hi: float = 2.0) -> float:
@@ -147,9 +146,11 @@ async def scrape(mode: str, save_callback, gender: str | None = None, limit: int
     errors: list[str] = []
     total_filtered = 0
 
+    _gender_tokens = {"men": {"men"}, "women": {"women"}}
     active_cats = [
         c for c in CATEGORIES
-        if gender is None or gender.lower() in c["name"].lower()
+        if gender is None
+        or bool(_gender_tokens.get(gender, set()) & set(c["name"].lower().split()))
     ]
 
     async with async_playwright() as pw:
@@ -177,15 +178,22 @@ async def scrape(mode: str, save_callback, gender: str | None = None, limit: int
                 ct = response.headers.get("content-type", "")
                 if "json" not in ct:
                     return
-                if not _TAXONOMY_RE.search(response.url):
+                if not _API_RE.search(response.url):
                     return
                 try:
                     body = await response.json()
-                    api_blobs.append(body)
+                    if body.get("products") or body.get("items"):
+                        api_blobs.append(body)
                 except Exception:
                     pass
 
             page.on("response", handle_response)
+
+            first_api_url: list[str] = []
+            async def capture_url(response):
+                if _API_RE.search(response.url) and not first_api_url:
+                    first_api_url.append(response.url)
+            page.on("response", capture_url)
 
             success = False
             for attempt in range(1, 3):
@@ -200,32 +208,51 @@ async def scrape(mode: str, save_callback, gender: str | None = None, limit: int
                     print(f"[Adidas] {cat['name']} attempt {attempt} failed: {exc}")
                     await asyncio.sleep(2)
 
+            page.remove_listener("response", handle_response)
+            page.remove_listener("response", capture_url)
+
             if not success:
                 msg = f"Adidas | {cat['name']} — failed after 2 retries"
                 print(f"[Adidas] ERROR: {msg}")
                 errors.append(msg)
-                page.remove_listener("response", handle_response)
                 continue
 
-            # Scroll to load lazy products
-            prev_count = 0
-            max_scrolls = 2 if mode == "test" else 20
-            for _ in range(max_scrolls):
-                await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                await asyncio.sleep(_rand_delay(1.0, 2.0))
-                articles = await page.query_selector_all("article")
-                current = len(articles)
-                if limit and current >= limit:
-                    break
-                if current == prev_count and _ >= 2:
-                    break
-                prev_count = current
+            # Paginate via the taxonomy API using browser fetch (inherits Kasada cookies)
+            if api_blobs and first_api_url:
+                first_blob = api_blobs[0]
+                info = first_blob.get("info", {})
+                total_count = info.get("count", 0)
+                view_size = info.get("viewSize", 48)
+                base_url = re.sub(r"[?&]start=\d+", "", first_api_url[0])
+                sep = "&" if "?" in base_url else "?"
 
-            page.remove_listener("response", handle_response)
+                max_products = (limit or 300) if mode == "test" else min(total_count, limit or 500)
+                pages_needed = max(1, -(-max_products // view_size))  # ceiling div
+                print(f"[Adidas] {cat['name']} — total={total_count}, fetching up to {max_products} products ({pages_needed} pages)")
 
-            # Parse taxonomy API responses
+                for page_i in range(1, pages_needed):
+                    start = page_i * view_size
+                    fetch_url = f"{base_url}{sep}start={start}"
+                    try:
+                        body = await page.evaluate(f"""
+                            async () => {{
+                                const r = await fetch({json.dumps(fetch_url)}, {{
+                                    headers: {{ 'Accept': 'application/json' }}
+                                }});
+                                return r.ok ? r.json() : null;
+                            }}
+                        """)
+                        if body and body.get("products"):
+                            api_blobs.append(body)
+                        await asyncio.sleep(_rand_delay(0.5, 1.2))
+                    except Exception as exc:
+                        print(f"[Adidas] {cat['name']} page {page_i} fetch error: {exc}")
+                        break
+
+            # Parse all API responses
             for blob in api_blobs:
-                for raw in blob.get("products") or []:
+                raw_list = blob.get("products") or blob.get("items") or []
+                for raw in raw_list:
                     p = _normalize(raw, cat["name"])
                     if p["id"] and p["id"] not in seen_ids:
                         seen_ids.add(p["id"])
@@ -256,7 +283,7 @@ async def scrape(mode: str, save_callback, gender: str | None = None, limit: int
             )
             all_products.extend(cat_products)
             await save_callback(all_products)
-            await asyncio.sleep(_rand_delay())
+            await asyncio.sleep(_rand_delay(2.0, 4.0))
 
         await browser.close()
 

@@ -14,14 +14,32 @@ from scrapers.filters import should_keep
 # resolve to Bags in Spain (the detected market). Use the explicit /es/en/ paths
 # for the clothing-collection landing pages instead.
 CATEGORIES = [
-    {
-        "name": "Woman > Clothing",
-        "url": "https://www.zara.com/es/en/woman-collections-l2158.html",
-    },
-    {
-        "name": "Man > Clothing",
-        "url": "https://www.zara.com/es/en/man-collection-l622.html",
-    },
+    # Women — multiple verified subcategory pages (l-codes confirmed from live nav)
+    {"name": "Woman > New In",    "url": "https://www.zara.com/es/en/woman-new-in-l1180.html"},
+    {"name": "Woman > Dresses",   "url": "https://www.zara.com/es/en/woman-dresses-l1066.html"},
+    {"name": "Woman > Tops",      "url": "https://www.zara.com/es/en/woman-tops-l1322.html"},
+    {"name": "Woman > Knitwear",  "url": "https://www.zara.com/es/en/woman-knitwear-l1152.html"},
+    {"name": "Woman > Trousers",  "url": "https://www.zara.com/es/en/woman-trousers-l1335.html"},
+    {"name": "Woman > Jeans",     "url": "https://www.zara.com/es/en/woman-jeans-l1119.html"},
+    {"name": "Woman > Jackets",   "url": "https://www.zara.com/es/en/woman-jackets-l1114.html"},
+    {"name": "Woman > Shirts",    "url": "https://www.zara.com/es/en/woman-shirts-l1217.html"},
+    {"name": "Woman > Skirts",    "url": "https://www.zara.com/es/en/woman-skirts-l1299.html"},
+    {"name": "Woman > Blazers",   "url": "https://www.zara.com/es/en/woman-blazers-l1055.html"},
+    {"name": "Woman > T-Shirts",  "url": "https://www.zara.com/es/en/woman-tshirts-l1362.html"},
+    {"name": "Woman > Shorts",    "url": "https://www.zara.com/es/en/woman-trousers-shorts-l1355.html"},
+    # Men — multiple verified subcategory pages (l-codes confirmed from live nav)
+    {"name": "Man > New In",      "url": "https://www.zara.com/es/en/man-new-in-l711.html"},
+    {"name": "Man > T-Shirts",    "url": "https://www.zara.com/es/en/man-tshirts-l855.html"},
+    {"name": "Man > Shirts",      "url": "https://www.zara.com/es/en/man-shirts-l737.html"},
+    {"name": "Man > Knitwear",    "url": "https://www.zara.com/es/en/man-knitwear-l681.html"},
+    {"name": "Man > Jackets",     "url": "https://www.zara.com/es/en/man-jackets-l640.html"},
+    {"name": "Man > Trousers",    "url": "https://www.zara.com/es/en/man-trousers-l838.html"},
+    {"name": "Man > Jeans",       "url": "https://www.zara.com/es/en/man-jeans-l659.html"},
+    {"name": "Man > Blazers",     "url": "https://www.zara.com/es/en/man-blazers-l608.html"},
+    {"name": "Man > Sweatshirts", "url": "https://www.zara.com/es/en/man-sweatshirts-l821.html"},
+    {"name": "Man > Polo Shirts", "url": "https://www.zara.com/es/en/man-polos-l733.html"},
+    {"name": "Man > Shorts",      "url": "https://www.zara.com/es/en/man-bermudas-l592.html"},
+    {"name": "Man > Overshirts",  "url": "https://www.zara.com/es/en/man-overshirts-l3174.html"},
 ]
 
 _PRODUCTS_RE = re.compile(r"/category/\d+/products", re.I)
@@ -131,6 +149,8 @@ async def scrape(mode: str, save_callback, gender: str | None = None, limit: int
         if gender is None
         or bool(_gender_tokens.get(gender, set()) & set(c["name"].lower().split()))
     ]
+    # Global seen IDs across all subcategory pages (products appear in multiple Zara subcategories)
+    global_seen_ids: set[str] = set()
 
     async with async_playwright() as pw:
         browser, context = await _make_browser_context(pw)
@@ -143,7 +163,6 @@ async def scrape(mode: str, save_callback, gender: str | None = None, limit: int
             cat_products: list[dict] = []
             cat_filtered = 0
             api_blobs: list[dict] = []
-            seen_ids: set[str] = set()
 
             async def handle_response(response):
                 ct = response.headers.get("content-type", "")
@@ -165,10 +184,20 @@ async def scrape(mode: str, save_callback, gender: str | None = None, limit: int
                     print(f"[Zara] {cat['name']} — attempt {attempt}")
                     await page.goto(cat["url"], wait_until="load", timeout=35_000)
                     await asyncio.sleep(_rand_delay(2.0, 3.5))
-                    # Scroll to trigger pagination / lazy loads
-                    for _ in range(4):
+                    # Scroll until no new API blobs appear for 3 consecutive rounds
+                    stable = 0
+                    prev_blobs = 0
+                    max_scrolls = 3 if mode == "test" else 30
+                    for _ in range(max_scrolls):
                         await page.keyboard.press("End")
-                        await asyncio.sleep(_rand_delay(0.8, 1.5))
+                        await asyncio.sleep(_rand_delay(1.0, 1.8))
+                        if len(api_blobs) == prev_blobs:
+                            stable += 1
+                            if stable >= 3:
+                                break
+                        else:
+                            stable = 0
+                        prev_blobs = len(api_blobs)
                     success = True
                     break
                 except Exception as exc:
@@ -191,8 +220,8 @@ async def scrape(mode: str, save_callback, gender: str | None = None, limit: int
                             if comp.get("type") != "Product":
                                 continue
                             p = _normalize(comp, cat["name"])
-                            if p["id"] and p["id"] not in seen_ids:
-                                seen_ids.add(p["id"])
+                            if p["id"] and p["id"] not in global_seen_ids:
+                                global_seen_ids.add(p["id"])
                                 if should_keep(p, "Zara"):
                                     cat_products.append(p)
                                     if limit and len(cat_products) >= limit:
@@ -206,6 +235,7 @@ async def scrape(mode: str, save_callback, gender: str | None = None, limit: int
                 if limit and len(cat_products) >= limit:
                     break
 
+            print(f"[Zara] {cat['name']} — {len(api_blobs)} API blobs captured")
             # DOM fallback when API interception yielded nothing
             if not cat_products:
                 print(f"[Zara] {cat['name']} — no API data, trying DOM fallback")
@@ -226,8 +256,8 @@ async def scrape(mode: str, save_callback, gender: str | None = None, limit: int
                         img_el = await item.query_selector("img")
                         img_src = await img_el.get_attribute("src") if img_el else ""
                         pid = pid_attr or href.split("-p")[-1].split(".html")[0]
-                        if pid and pid not in seen_ids:
-                            seen_ids.add(pid)
+                        if pid and pid not in global_seen_ids:
+                            global_seen_ids.add(pid)
                             p = {
                                 "id": pid,
                                 "brand": "Zara",
@@ -254,7 +284,7 @@ async def scrape(mode: str, save_callback, gender: str | None = None, limit: int
             )
             all_products.extend(cat_products)
             await save_callback(all_products)
-            await asyncio.sleep(_rand_delay())
+            await asyncio.sleep(_rand_delay(2.0, 4.0))
 
         await browser.close()
 
