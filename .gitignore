@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+.env.local
+
+# Database (local dev only — commit fashion_seed.db instead)
+style-keywords/fashion.db
+style-keywords/keywords.db
+
+# Do NOT ignore the seed DB (products only, no user data)
+!style-keywords/fashion_seed.db
+
+# Results (user uploads — do not commit)
+style-keywords/Results/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Tagger cache
+tagger/data/cache/
+tagger/data/products.xlsx
+tagger/data/products_tagged.xlsx
+
+# Scraper output
+scraper/data/
+
+# Model weights (large binary — download at runtime if needed)
+*.pt
+
+# Video and test files
+*.mp4
+test_photo.png
+style-keywords/Pic.png

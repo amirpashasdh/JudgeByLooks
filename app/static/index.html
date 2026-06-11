@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StyleFit — Discover your style matches</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="/static/index.html" class="nav-logo">StyleFit</a>
+    </div>
+  </nav>
+
+  <main>
+    <div class="container">
+
+      <!-- Section 1: Headline -->
+      <section style="margin-bottom: 48px;">
+        <h1 style="margin-bottom: 14px;">Discover your style matches</h1>
+        <p>Upload a photo of your current outfit and we'll recommend
+           pieces that complement your personal aesthetic.</p>
+      </section>
+
+      <!-- Section 2: Upload zone -->
+      <section style="margin-bottom: 8px;">
+        <div class="upload-zone" id="uploadZone">
+          <!-- Placeholder shown before file is selected -->
+          <div class="upload-placeholder">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 4L16 22M16 4L10 10M16 4L22 10" stroke="#6B6B6B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M6 24H26" stroke="#6B6B6B" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <p>Drop your photo here</p>
+            <span class="or">or</span>
+            <label class="btn btn-outline upload-label" for="fileInput">Choose file</label>
+          </div>
+
+          <!-- Preview image (hidden until file selected) -->
+          <img class="upload-preview-img" id="previewImg" src="" alt="Preview" />
+        </div>
+
+        <!-- Hidden file input -->
+        <input
+          type="file"
+          id="fileInput"
+          accept="image/jpeg,image/png,image/webp"
+          style="display: none;"
+        />
+
+        <p class="upload-hint">JPEG, PNG or WEBP · Max 10MB</p>
+      </section>
+
+      <!-- Section 3: File info (hidden until file selected) -->
+      <div class="file-info" id="fileInfo">
+        <div style="display: flex; align-items: center; overflow: hidden;">
+          <span class="file-info-name" id="fileName"></span>
+          <span class="file-info-size" id="fileSize"></span>
+        </div>
+        <button class="file-remove" id="removeBtn">Remove</button>
+      </div>
+
+      <!-- Inline error -->
+      <p class="inline-error" id="uploadError"></p>
+
+      <!-- Section 4: Submit -->
+      <div class="submit-section">
+        <button class="btn btn-full" id="submitBtn" disabled>
+          Analyse my style
+        </button>
+        <p class="inline-error" id="submitError" style="margin-top: 12px;"></p>
+      </div>
+
+      <hr class="divider" />
+
+      <!-- Section 5: How it works -->
+      <section class="how-it-works">
+        <h2>How it works</h2>
+        <div class="steps">
+          <div class="step">
+            <div class="step-number">01</div>
+            <div class="step-title">Upload</div>
+            <p class="step-desc">Share a photo of your current outfit</p>
+          </div>
+          <div class="step">
+            <div class="step-number">02</div>
+            <div class="step-title">Analyse</div>
+            <p class="step-desc">We identify your style keywords</p>
+          </div>
+          <div class="step">
+            <div class="step-number">03</div>
+            <div class="step-title">Discover</div>
+            <p class="step-desc">Browse products matched to your taste</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="page-footer">
+    <div class="container">
+      <p>Your photo is used only to analyse style. It is not stored permanently.</p>
+    </div>
+  </footer>
+
+  <script src="/static/js/upload.js"></script>
+</body>
+</html>

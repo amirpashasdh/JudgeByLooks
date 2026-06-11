@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StyleFit — Your style profile</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="/static/index.html" class="nav-logo">StyleFit</a>
+      <a href="/static/index.html" id="startOverNav"
+         style="font-size:14px;color:#6B6B6B;text-decoration:none;">
+        Start over
+      </a>
+    </div>
+  </nav>
+
+  <main class="container">
+
+    <!-- Section 1: Header -->
+    <section style="margin-bottom: 0;">
+      <div class="complete-label">Analysis complete</div>
+      <h1 style="margin-bottom: 10px;">Your style profile</h1>
+      <p>Based on your ratings and selections, here's what we've learned about your taste.</p>
+    </section>
+
+    <!-- Section 2: Style profile card -->
+    <div class="profile-card">
+
+      <!-- Part A: Dimension bars -->
+      <div class="dimension-bars" id="dimensionBars"></div>
+
+      <!-- Part B: Top keywords -->
+      <div class="section-label">Your strongest style signals</div>
+      <div class="large-pills" id="topKeywordPills"></div>
+
+      <!-- Part C: Style summary sentence -->
+      <p class="style-sentence" id="styleSentence"></p>
+
+    </div>
+
+    <!-- Section 3: Favorites -->
+    <div class="section-label">Your saved picks</div>
+    <div class="favorites-row" id="favoritesRow"></div>
+
+    <!-- Section 4: What happens next -->
+    <div class="next-steps-box">
+      <h2>How your feedback helps</h2>
+      <p>Your ratings teach the system which products genuinely match your aesthetic — not just your current outfit.</p>
+      <p>Your favorites reveal the style instincts that are harder to capture from a single photo.</p>
+      <p>Over time, this data improves recommendations for everyone with a similar style profile.</p>
+    </div>
+
+    <!-- Section 5: CTA -->
+    <div class="cta-section">
+      <h2>Want to try again?</h2>
+      <p>Upload another photo to see how your recommendations change with a different outfit.</p>
+      <button class="btn" id="startOverBtn">Upload another photo</button>
+      <p class="cta-note">Session data cleared. Your style profile has been saved anonymously.</p>
+    </div>
+
+  </main>
+
+  <script src="/static/js/thankyou.js"></script>
+</body>
+</html>
