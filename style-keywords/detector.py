@@ -1,6 +1,11 @@
 import numpy as np
 import cv2
-from ultralytics import YOLO
+
+try:
+    from ultralytics import YOLO
+    _YOLO_AVAILABLE = True
+except ImportError:
+    _YOLO_AVAILABLE = False
 
 # 0 = person class in COCO
 PERSON_CLASS = 0
@@ -11,10 +16,14 @@ MIN_CROP_AREA = 10000
 
 class PersonDetector:
     def __init__(self):
-        # yolov8n is the lightest model, runs fine on CPU
-        self.model = YOLO("yolov8n.pt")
+        if _YOLO_AVAILABLE:
+            self.model = YOLO("yolov8n.pt")
+        else:
+            self.model = None
 
     def get_person_crops(self, frame: np.ndarray) -> list[np.ndarray]:
+        if self.model is None:
+            return []
         results = self.model(frame, verbose=False)[0]
         crops = []
         for box in results.boxes:
