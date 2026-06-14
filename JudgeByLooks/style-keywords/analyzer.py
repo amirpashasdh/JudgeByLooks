@@ -205,10 +205,11 @@ Rules:
 - coloring: person's natural coloring, independent of outfit
 - price_tier: strictly independent of style_scores — aesthetic and price are separate signals
 - overall_confidence < 0.2 → set low_confidence_fallback true
-- recommendations: exactly 10 items that COMPLEMENT the outfit — think like a creative stylist proposing a full wardrobe extension
-- exactly 2 of the 10 must have slot "shoes"
+- recommendations: exactly 14 items that COMPLEMENT the outfit — think like a creative stylist proposing a full wardrobe extension
+- sort the 14 by importance: most impactful / most essential items first
+- exactly 2 of the 14 must have slot "shoes" — place them where they rank naturally by importance
 - each recommendation's keywords is a sparse dict of style keywords (from the valid list) that describe the ideal item — 5 to 10 keywords scored 0.1–1.0, omit zeros
-- cover diverse item types across the 10: vary tops, bottoms, outerwear, accessories, shoes — do not repeat the same slot more than twice (shoes aside)
+- cover diverse item types across the 14: vary tops, bottoms, outerwear, accessories, shoes — do not repeat the same slot more than twice (shoes aside)
 - never recommend items already worn (same slot + similar style)
 - keyword scores should reflect what would actually match well with this person's aesthetic, not just generic items
 - reasoning must be garment-focused, never body-focused
