@@ -1,0 +1,31 @@
+# Environment & secrets
+.env
+*.env
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# ML models
+*.pt
+*.pth
+*.onnx
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# Results / uploaded images
+style-keywords/Results/
+style-keywords/results/
+
+# Raw scrape data (large)
+1_scraper/data/
+
+# OS
+.DS_Store

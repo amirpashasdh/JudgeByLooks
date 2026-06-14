@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StyleFit — Browse styles</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="/static/index.html" class="nav-logo">StyleFit</a>
+    </div>
+  </nav>
+
+  <main class="container">
+
+    <!-- Section 1: Header -->
+    <section style="margin-bottom: 4px;">
+      <h1 style="margin-bottom: 10px;">Browse more styles</h1>
+      <p>Select up to 5 pieces that feel most like you. These help us understand your personal taste.</p>
+    </section>
+
+    <!-- Favorites counter -->
+    <div class="favorites-counter" id="favCounter">0 / 5 selected</div>
+
+    <!-- Section 2: Filter pills -->
+    <div class="filter-pills" id="filterPills"></div>
+
+    <!-- Section 3: Product grid -->
+    <div class="browse-grid" id="browseGrid">
+      <!-- 9 skeleton cards shown while loading -->
+      <div class="skeleton-card"><div class="skeleton skeleton-img" style="aspect-ratio:3/4"></div><div class="skeleton-body"><div class="skeleton skeleton-line" style="width:40%"></div><div class="skeleton skeleton-line" style="width:70%"></div><div class="skeleton skeleton-line" style="width:30%"></div></div></div>
+      <div class="skeleton-card"><div class="skeleton skeleton-img" style="aspect-ratio:3/4"></div><div class="skeleton-body"><div class="skeleton skeleton-line" style="width:40%"></div><div class="skeleton skeleton-line" style="width:70%"></div><div class="skeleton skeleton-line" style="width:30%"></div></div></div>
+      <div class="skeleton-card"><div class="skeleton skeleton-img" style="aspect-ratio:3/4"></div><div class="skeleton-body"><div class="skeleton skeleton-line" style="width:40%"></div><div class="skeleton skeleton-line" style="width:70%"></div><div class="skeleton skeleton-line" style="width:30%"></div></div></div>
+      <div class="skeleton-card"><div class="skeleton skeleton-img" style="aspect-ratio:3/4"></div><div class="skeleton-body"><div class="skeleton skeleton-line" style="width:40%"></div><div class="skeleton skeleton-line" style="width:70%"></div><div class="skeleton skeleton-line" style="width:30%"></div></div></div>
+      <div class="skeleton-card"><div class="skeleton skeleton-img" style="aspect-ratio:3/4"></div><div class="skeleton-body"><div class="skeleton skeleton-line" style="width:40%"></div><div class="skeleton skeleton-line" style="width:70%"></div><div class="skeleton skeleton-line" style="width:30%"></div></div></div>
+      <div class="skeleton-card"><div class="skeleton skeleton-img" style="aspect-ratio:3/4"></div><div class="skeleton-body"><div class="skeleton skeleton-line" style="width:40%"></div><div class="skeleton skeleton-line" style="width:70%"></div><div class="skeleton skeleton-line" style="width:30%"></div></div></div>
+      <div class="skeleton-card"><div class="skeleton skeleton-img" style="aspect-ratio:3/4"></div><div class="skeleton-body"><div class="skeleton skeleton-line" style="width:40%"></div><div class="skeleton skeleton-line" style="width:70%"></div><div class="skeleton skeleton-line" style="width:30%"></div></div></div>
+      <div class="skeleton-card"><div class="skeleton skeleton-img" style="aspect-ratio:3/4"></div><div class="skeleton-body"><div class="skeleton skeleton-line" style="width:40%"></div><div class="skeleton skeleton-line" style="width:70%"></div><div class="skeleton skeleton-line" style="width:30%"></div></div></div>
+      <div class="skeleton-card"><div class="skeleton skeleton-img" style="aspect-ratio:3/4"></div><div class="skeleton-body"><div class="skeleton skeleton-line" style="width:40%"></div><div class="skeleton skeleton-line" style="width:70%"></div><div class="skeleton skeleton-line" style="width:30%"></div></div></div>
+    </div>
+
+  </main>
+
+  <!-- Section 4: Sticky bottom bar -->
+  <div class="bottom-bar" id="bottomBar">
+    <span class="bottom-bar-label" id="bottomLabel">Select up to 5 favorites</span>
+    <button class="btn" id="submitBtn" disabled>Save my picks →</button>
+  </div>
+
+  <script src="/static/js/browse.js"></script>
+</body>
+</html>
