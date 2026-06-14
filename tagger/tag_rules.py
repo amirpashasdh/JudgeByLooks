@@ -465,6 +465,98 @@ def _tag(product: dict) -> dict:
     if is_adidas:
         s("performance_tech", max(scores.get("performance_tech", 0), 0.65))
 
+    # ── Product attributes — Pattern ──────────────────────────────────────
+    s("floral_print", _score(h,
+        ["floral", "flower", "botanical", "rose print", "daisy"],
+        ["bloom", "petal"]))
+
+    s("striped_pattern", _score(h,
+        ["stripe", "striped", "breton", "pinstripe", "nautical stripe"],
+        ["band", "linear"]))
+
+    s("checked_pattern", _score(h,
+        ["check", "checked", "plaid", "tartan", "gingham", "houndstooth",
+         "vichy", "windowpane"],
+        ["grid", "lattice"]))
+
+    s("animal_print", _score(h,
+        ["leopard", "zebra", "snake", "crocodile", "tiger", "animal print",
+         "python", "jaguar"],
+        ["animal", "wild print"]))
+
+    s("abstract_print", _score(h,
+        ["abstract", "geometric print", "tie dye", "marble", "watercolour",
+         "patchwork", "motif"],
+        ["pattern", "printed"]))
+
+    # solid_color: high confidence when name has no pattern indicator
+    _has_pattern = any(scores.get(k, 0) > 0.3 for k in [
+        "floral_print", "striped_pattern", "checked_pattern",
+        "animal_print", "abstract_print", "multicolor"
+    ])
+    if not _has_pattern:
+        s("solid_color", 0.75)
+
+    # ── Product attributes — Material ─────────────────────────────────────
+    s("denim_fabric", _score(h,
+        ["denim", "jean", "chambray"],
+        ["washed", "indigo"]))
+
+    s("linen_fabric", _score(h,
+        ["linen", "linen blend", "linen-blend"],
+        ["natural fibre", "breathable"]))
+
+    s("velvet_fabric", _score(h,
+        ["velvet", "crushed velvet", "velour"],
+        []))
+
+    s("satin_fabric", _score(h,
+        ["satin", "silk satin", "polished"],
+        ["slip", "glossy", "shiny"]))
+
+    s("leather_fabric", _score(h,
+        ["leather", "faux leather", "vegan leather", "nappa"],
+        ["patent", "suede"]))
+
+    s("knitwear_fabric", _score(h,
+        ["knit", "knitwear", "jersey", "ribbed", "cable knit", "cashmere",
+         "merino", "wool", "jumper", "cardigan", "sweater"],
+        ["cosy", "chunky", "fine knit"]))
+
+    # ── Product attributes — Length ───────────────────────────────────────
+    s("mini_length", _score(h,
+        ["mini", "micro", "short dress", "short skirt"],
+        ["above knee", "thigh"]))
+
+    s("midi_length", _score(h,
+        ["midi", "mid-length", "calf-length", "below knee"],
+        ["mid length", "tea length"]))
+
+    s("maxi_length", _score(h,
+        ["maxi", "full length", "floor length", "long dress", "long skirt"],
+        ["ankle length", "sweeping"]))
+
+    # ── Product attributes — Key design detail ────────────────────────────
+    s("ruffled", _score(h,
+        ["ruffle", "ruffled", "frill", "frilled", "flounce"],
+        ["tiered", "layered hem"]))
+
+    s("belted", _score(h,
+        ["belt", "belted", "tied waist", "sash", "obi"],
+        ["cinched", "waist tie"]))
+
+    s("crochet_detail", _score(h,
+        ["crochet", "crochet trim", "macrame"],
+        ["open weave", "hand-crafted"]))
+
+    s("embroidered_detail", _score(h,
+        ["embroidered", "embroidery", "embroidered patch", "needlework"],
+        ["cross stitch", "stitched"]))
+
+    s("pleated_detail", _score(h,
+        ["pleat", "pleated", "accordion", "knife pleat", "box pleat"],
+        ["gathered", "smocked"]))
+
     return scores
 
 
@@ -498,7 +590,7 @@ def enrich(product: dict) -> dict:
 def write_xlsx(products: list[dict], path: Path) -> None:
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Tagged Products"
+    ws.title = "Products"
 
     header_fill = PatternFill("solid", fgColor="1F4E79")
     kw_fill     = PatternFill("solid", fgColor="2E75B6")

@@ -7,21 +7,40 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 KEYWORDS = [
+    # Aesthetic
     "minimalist", "maximalist", "classic", "avant_garde", "streetwear",
     "bohemian", "preppy", "romantic", "edgy", "quiet_luxury", "coastal",
-    "dark_academia", "sporty", "playful", "serious", "rebellious", "elegant",
-    "laid_back", "bold", "understated", "whimsical", "polished", "raw",
+    "dark_academia", "sporty",
+    # Mood
+    "playful", "serious", "rebellious", "elegant", "laid_back", "bold",
+    "understated", "whimsical", "polished", "raw",
+    # Color palette
     "neutral", "monochrome", "earth_tones", "pastel", "bold_colors",
     "black_forward", "white_forward", "jewel_tones", "multicolor",
-    "loungewear", "casual", "smart_casual", "business_casual", "formal",
-    "black_tie", "parisian", "scandinavian", "italian_luxury",
-    "japanese_minimalist", "american_prep", "british_heritage",
-    "nyc_streetwear", "californian", "fitted", "oversized", "structured",
-    "flowy", "layered", "cropped", "voluminous", "everyday", "workwear",
-    "going_out", "travel", "outdoor", "sport", "beach", "occasion",
+    # Formality
+    "loungewear", "casual", "smart_casual", "business_casual", "formal", "black_tie",
+    # Cultural
+    "parisian", "scandinavian", "italian_luxury", "japanese_minimalist",
+    "american_prep", "british_heritage", "nyc_streetwear", "californian",
+    # Silhouette
+    "fitted", "oversized", "structured", "flowy", "layered", "cropped", "voluminous",
+    # Occasion
+    "everyday", "workwear", "going_out", "travel", "outdoor", "sport", "beach", "occasion",
+    # Values
     "sustainable", "investment_piece", "trend_driven", "heritage_craft",
     "luxury_status", "budget_conscious", "logo_forward", "logo_free",
     "size_inclusive", "gender_neutral", "performance_tech",
+    # ── Product attributes (discriminating) ──────────────────────────────
+    # Pattern
+    "floral_print", "striped_pattern", "checked_pattern", "animal_print",
+    "solid_color", "abstract_print",
+    # Material
+    "denim_fabric", "linen_fabric", "velvet_fabric", "satin_fabric",
+    "leather_fabric", "knitwear_fabric",
+    # Length / proportion
+    "mini_length", "midi_length", "maxi_length",
+    # Key design detail
+    "ruffled", "belted", "crochet_detail", "embroidered_detail", "pleated_detail",
 ]
 
 

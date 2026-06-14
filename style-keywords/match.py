@@ -35,6 +35,12 @@ KEYWORDS = [
     "sustainable", "investment_piece", "trend_driven", "heritage_craft",
     "luxury_status", "budget_conscious", "logo_forward", "logo_free",
     "size_inclusive", "gender_neutral", "performance_tech",
+    "floral_print", "striped_pattern", "checked_pattern", "animal_print",
+    "solid_color", "abstract_print",
+    "denim_fabric", "linen_fabric", "velvet_fabric", "satin_fabric",
+    "leather_fabric", "knitwear_fabric",
+    "mini_length", "midi_length", "maxi_length",
+    "ruffled", "belted", "crochet_detail", "embroidered_detail", "pleated_detail",
 ]
 
 

@@ -82,6 +82,13 @@ KEYWORD_GROUPS = {
                       "heritage_craft", "luxury_status", "budget_conscious",
                       "logo_forward", "logo_free", "size_inclusive",
                       "gender_neutral", "performance_tech"],
+    "Pattern":       ["floral_print", "striped_pattern", "checked_pattern",
+                      "animal_print", "solid_color", "abstract_print"],
+    "Material":      ["denim_fabric", "linen_fabric", "velvet_fabric", "satin_fabric",
+                      "leather_fabric", "knitwear_fabric"],
+    "Length":        ["mini_length", "midi_length", "maxi_length"],
+    "Detail":        ["ruffled", "belted", "crochet_detail", "embroidered_detail",
+                      "pleated_detail"],
 }
 
 BASE_COLS = [
