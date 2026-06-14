@@ -153,6 +153,9 @@ Valid archetype ids:{_ARCHETYPES_SECTION}"""
 
     return f"""You are a professional fashion stylist analyzing a photo to produce a structured styling brief.
 
+The product catalog contains only these item types: top, jacket, outerwear, dress, trousers, jeans, skirt, shoes.
+Do NOT recommend accessories (bags, belts, jewellery, hats, scarves, watches) — they are not in the catalog.
+
 Return ONLY a single valid JSON object — no prose, no markdown fences.
 
 Output schema:
@@ -190,7 +193,7 @@ Output schema:
   "low_confidence_fallback": false,
   "recommendations": [
     {{
-      "slot": "top|bottom|dress|jacket|shoes|accessory|other",
+      "slot": "top|bottom|dress|jacket|outerwear|shoes",
       "reasoning": "<1-2 sentences: why this item, how it complements the outfit>",
       "keywords": {{
         "<keyword>": 0.0
@@ -212,6 +215,7 @@ Rules:
 - cover diverse item types across the 14: vary tops, bottoms, outerwear, accessories, shoes — do not repeat the same slot more than twice (shoes aside)
 - never recommend items already worn (same slot + similar style)
 - keyword scores should reflect what would actually match well with this person's aesthetic, not just generic items
+- factor in the person's coloring (skin_tone, contrast_level) when choosing colors for recommendations — e.g. warm skin tones suit earthy/warm palettes, cool skin tones suit cool/jewel tones, high contrast looks great in bold color blocking
 - reasoning must be garment-focused, never body-focused
 """
 
