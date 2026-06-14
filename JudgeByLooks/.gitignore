@@ -22,6 +22,10 @@ env/
 
 # Results / uploaded images
 style-keywords/Results/
+style-keywords/results/
+
+# Raw scrape data (large)
+1_scraper/data/
 
 # OS
 .DS_Store
