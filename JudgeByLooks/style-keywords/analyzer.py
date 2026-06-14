@@ -194,7 +194,8 @@ Output schema:
   "recommendations": [
     {{
       "slot": "top|bottom|dress|jacket|outerwear|shoes",
-      "reasoning": "<1-2 sentences: why this item, how it complements the outfit>",
+      "type": "similar|complement",
+      "reasoning": "<1-2 sentences: why this item, how it relates to the outfit>",
       "keywords": {{
         "<keyword>": 0.0
       }}
@@ -208,14 +209,14 @@ Rules:
 - coloring: person's natural coloring, independent of outfit
 - price_tier: strictly independent of style_scores — aesthetic and price are separate signals
 - overall_confidence < 0.2 → set low_confidence_fallback true
-- recommendations: exactly 14 items that COMPLEMENT the outfit — think like a creative stylist proposing a full wardrobe extension
-- sort the 14 by importance: most impactful / most essential items first
+- recommendations: exactly 14 items total, sorted by importance (most impactful first)
+- exactly 2–4 of the 14 must have type "similar": these are alternative versions of items already worn — same slot and style DNA but a different product (e.g. they wear a camel coat → recommend another camel or neutral structured coat)
+- the remaining 10–12 must have type "complement": items that fill gaps or extend the wardrobe in a new direction
 - exactly 2 of the 14 must have slot "shoes" — place them where they rank naturally by importance
 - each recommendation's keywords is a sparse dict of style keywords (from the valid list) that describe the ideal item — 5 to 10 keywords scored 0.1–1.0, omit zeros
-- cover diverse item types across the 14: vary tops, bottoms, outerwear, accessories, shoes — do not repeat the same slot more than twice (shoes aside)
-- never recommend items already worn (same slot + similar style)
+- cover diverse item types: do not repeat the same slot more than twice among complements (shoes aside)
 - keyword scores should reflect what would actually match well with this person's aesthetic, not just generic items
-- factor in the person's coloring (skin_tone, contrast_level) when choosing colors for recommendations — e.g. warm skin tones suit earthy/warm palettes, cool skin tones suit cool/jewel tones, high contrast looks great in bold color blocking
+- factor in the person's coloring (skin_tone, contrast_level) when choosing colors — warm skin tones suit earthy/warm palettes, cool skin tones suit cool/jewel tones, high contrast looks great in bold color blocking
 - reasoning must be garment-focused, never body-focused
 """
 

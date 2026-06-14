@@ -114,6 +114,7 @@ def run_matching(
 
         rec_keywords = rec.get("keywords", {})
         slot         = rec.get("slot", "other")
+        rec_type     = rec.get("type", "complement")
         reasoning    = rec.get("reasoning", "")
 
         allowed_types = SLOT_TO_ITEM_TYPES.get(slot, {slot})
@@ -152,6 +153,7 @@ def run_matching(
             "product_url":  best_product.get("product_url") or "",
             "image_url":    best_product.get("image_url") or "",
             "slot":         slot,
+            "rec_type":     rec_type,
             "slot_reasoning": reasoning,
             "retrieval_mode": "analyzer_led",
         })
@@ -165,9 +167,10 @@ def run_matching(
     for r in final:
         conn.execute(
             """INSERT INTO recommendations
-               (session_id, person_id, product_id, rank, score, mode, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (session_id, person_id, r["product_id"], r["rank"], r["score"], "analyzer_led", now),
+               (session_id, person_id, product_id, rank, score, mode, rec_type, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (session_id, person_id, r["product_id"], r["rank"], r["score"],
+             "analyzer_led", r.get("rec_type", "complement"), now),
         )
     conn.commit()
     conn.close()

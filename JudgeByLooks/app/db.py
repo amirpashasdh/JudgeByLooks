@@ -24,6 +24,11 @@ def get_keywords_db() -> sqlite3.Connection:
     return conn
 
 
+def _col_exists(conn, table, col):
+    cols = [r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()]
+    return col in cols
+
+
 def ensure_recommendations_table():
     conn = get_db()
     conn.execute("""
@@ -35,9 +40,14 @@ def ensure_recommendations_table():
             rank        INTEGER NOT NULL,
             score       REAL    NOT NULL,
             mode        TEXT    NOT NULL DEFAULT 'diverse',
+            rec_type    TEXT    NOT NULL DEFAULT 'complement',
             created_at  TEXT    NOT NULL
         )
     """)
+    conn.execute(
+        "ALTER TABLE recommendations ADD COLUMN rec_type TEXT NOT NULL DEFAULT 'complement'"
+        if not _col_exists(conn, 'recommendations', 'rec_type') else "SELECT 1"
+    )
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_reco_session ON recommendations(session_id, person_id)"
     )
