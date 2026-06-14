@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StyleFit — Your style matches</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="/static/index.html" class="nav-logo">StyleFit</a>
+    </div>
+  </nav>
+
+  <main class="container">
+
+    <!-- Section 1: Header -->
+    <section style="margin-bottom: 8px;">
+      <h1 style="margin-bottom: 10px;">Your style matches</h1>
+      <p>Rate each item to help us understand your taste better.</p>
+      <!-- Keyword pills -->
+      <div class="keyword-pills-wrap" id="keywordPills"></div>
+    </section>
+
+    <!-- Section 2: Progress -->
+    <div class="progress-wrap">
+      <div class="progress-label" id="progressLabel">0 / 10 rated</div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <!-- Section 3: Product grid -->
+    <div class="product-grid" id="productGrid">
+      <!-- Skeleton cards shown during load -->
+      <div class="skeleton-card">
+        <div class="skeleton skeleton-img"></div>
+        <div class="skeleton-body">
+          <div class="skeleton skeleton-line" style="width:40%"></div>
+          <div class="skeleton skeleton-line" style="width:75%"></div>
+          <div class="skeleton skeleton-line" style="width:30%"></div>
+        </div>
+      </div>
+      <div class="skeleton-card">
+        <div class="skeleton skeleton-img"></div>
+        <div class="skeleton-body">
+          <div class="skeleton skeleton-line" style="width:40%"></div>
+          <div class="skeleton skeleton-line" style="width:75%"></div>
+          <div class="skeleton skeleton-line" style="width:30%"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Section 4: Sticky bottom bar -->
+  <div class="bottom-bar" id="bottomBar">
+    <span class="bottom-bar-label" id="bottomLabel">Rate all items to continue</span>
+    <button class="btn" id="submitBtn" disabled>Continue →</button>
+  </div>
+
+  <script src="/static/js/results.js"></script>
+</body>
+</html>

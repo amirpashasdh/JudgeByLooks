@@ -1,0 +1,335 @@
+{
+  "archetypes": [
+    {
+      "id": "minimalist",
+      "colors": ["black", "white", "grey", "navy", "beige", "camel"],
+      "color_notes": "low saturation, monochrome/tonal palettes",
+      "silhouette": ["clean", "structured", "relaxed-tailored"],
+      "patterns": ["solid", "subtle texture"],
+      "fabrics": ["wool", "cotton", "technical"],
+      "formality": ["smart-casual", "formal"],
+      "avoid": ["graphic prints", "logos", "bright accents", "distressing"]
+    },
+    {
+      "id": "streetwear",
+      "colors": ["bold contrast", "neutrals+statement color", "brand palettes"],
+      "color_notes": "high contrast pairings",
+      "silhouette": ["oversized", "relaxed", "dropped shoulders", "layered"],
+      "patterns": ["graphics", "logos", "text print"],
+      "fabrics": ["jersey", "fleece", "nylon", "denim"],
+      "formality": ["casual"],
+      "avoid": ["tailored formalwear", "delicate fabrics"]
+    },
+    {
+      "id": "goth",
+      "colors": ["black", "charcoal", "burgundy", "deep purple"],
+      "color_notes": "dark, low-value palette",
+      "silhouette": ["structured-dramatic", "fitted-with-flare"],
+      "patterns": ["lace", "mesh", "occult/baroque motifs"],
+      "fabrics": ["leather", "velvet", "mesh", "PVC"],
+      "formality": ["casual", "elevated-casual"],
+      "avoid": ["pastels", "bright colors", "preppy patterns"]
+    },
+    {
+      "id": "dark_academia",
+      "colors": ["brown", "olive", "cream", "burgundy", "navy"],
+      "color_notes": "warm muted earth tones",
+      "silhouette": ["tailored", "layered (vests, blazers, scarves)"],
+      "patterns": ["plaid", "herringbone", "subtle stripes"],
+      "fabrics": ["tweed", "wool", "corduroy"],
+      "formality": ["smart-casual", "formal"],
+      "avoid": ["neon", "athletic wear", "streetwear graphics"]
+    },
+    {
+      "id": "preppy",
+      "colors": ["navy", "white", "pastel/bright accents (kelly green, pink, yellow)", "red-white-blue"],
+      "color_notes": "crisp, clean combos",
+      "silhouette": ["fitted-classic", "structured"],
+      "patterns": ["stripes", "gingham", "argyle", "polka dot"],
+      "fabrics": ["cotton", "pique", "chino"],
+      "formality": ["casual", "smart-casual"],
+      "avoid": ["distressing", "oversized streetwear", "dark/grunge palettes"]
+    },
+    {
+      "id": "bohemian",
+      "colors": ["rust", "terracotta", "mustard", "sage", "cream"],
+      "color_notes": "warm, muted earth tones",
+      "silhouette": ["flowing", "loose", "layered", "asymmetric hems"],
+      "patterns": ["paisley", "floral", "ethnic-inspired", "fringe"],
+      "fabrics": ["linen", "cotton", "suede", "crochet"],
+      "formality": ["casual"],
+      "avoid": ["sharp tailoring", "synthetic/technical fabrics", "monochrome minimalism"]
+    },
+    {
+      "id": "classic_business",
+      "colors": ["navy", "grey", "black", "white", "muted blues"],
+      "color_notes": "low contrast",
+      "silhouette": ["tailored", "structured", "fitted"],
+      "patterns": ["solid", "pinstripe", "subtle check"],
+      "fabrics": ["wool", "cotton blend", "structured weaves"],
+      "formality": ["formal", "smart-casual"],
+      "avoid": ["graphics", "distressing", "oversized/streetwear shapes"]
+    },
+    {
+      "id": "athleisure",
+      "colors": ["black", "grey", "neon accents", "brand colorways"],
+      "color_notes": "high-contrast performance look",
+      "silhouette": ["fitted-to-relaxed", "performance cuts"],
+      "patterns": ["minimal", "technical paneling"],
+      "fabrics": ["technical/synthetic", "stretch"],
+      "formality": ["casual"],
+      "avoid": ["tailored formalwear", "linen", "lace"]
+    },
+    {
+      "id": "romantic_feminine",
+      "colors": ["pastels", "blush", "cream", "soft florals"],
+      "color_notes": "soft, light values",
+      "silhouette": ["fitted-flared", "ruffles", "soft draping"],
+      "patterns": ["floral", "lace", "polka dot"],
+      "fabrics": ["chiffon", "lace", "satin", "soft cotton"],
+      "formality": ["casual", "formal"],
+      "avoid": ["harsh tailoring", "technical fabrics", "dark monochrome"]
+    },
+    {
+      "id": "grunge",
+      "colors": ["black", "grey", "faded denim blue", "dark red"],
+      "color_notes": "washed-out, desaturated",
+      "silhouette": ["loose", "layered", "deliberately ill-fitting"],
+      "patterns": ["plaid/flannel check", "distressing", "band graphics"],
+      "fabrics": ["denim", "flannel", "worn leather", "cotton"],
+      "formality": ["casual"],
+      "avoid": ["clean tailoring", "bright/pastel palettes", "polished fabrics"]
+    },
+    {
+      "id": "cottagecore",
+      "colors": ["cream", "sage", "dusty pink", "lavender", "butter yellow"],
+      "color_notes": "muted warm pastels",
+      "silhouette": ["loose", "flowing", "gathered waists", "puffed sleeves", "midi/maxi"],
+      "patterns": ["ditsy florals", "gingham", "embroidery"],
+      "fabrics": ["cotton", "linen", "lightweight knits"],
+      "formality": ["casual"],
+      "avoid": ["synthetic/technical fabrics", "sharp tailoring", "dark monochrome", "logos"]
+    },
+    {
+      "id": "y2k_retro",
+      "colors": ["bright pink", "baby blue", "silver/metallic", "lime", "lilac"],
+      "color_notes": "saturated, vibrant",
+      "silhouette": ["low-rise", "fitted-cropped tops", "mini lengths", "slim-flared bottoms"],
+      "patterns": ["logo-heavy", "butterfly/star motifs", "animal print accents"],
+      "fabrics": ["denim", "jersey", "velour", "mesh", "shiny synthetics"],
+      "formality": ["casual"],
+      "avoid": ["muted earth tones", "oversized minimalist cuts", "tweed/wool"]
+    },
+    {
+      "id": "coastal_resort",
+      "colors": ["white", "cream", "light blue", "sand"],
+      "color_notes": "light, breezy palette",
+      "silhouette": ["relaxed", "loose-fitted", "breathable drape"],
+      "patterns": ["stripes", "subtle nautical motifs", "solid"],
+      "fabrics": ["linen", "cotton", "lightweight knit"],
+      "formality": ["casual"],
+      "avoid": ["heavy fabrics (wool, leather)", "dark/moody palettes", "structured tailoring"]
+    },
+    {
+      "id": "punk_edgy",
+      "colors": ["black", "red", "white", "metallic accents"],
+      "color_notes": "high contrast, dominant black",
+      "silhouette": ["fitted with hardware (studs, zippers)", "cropped or distressed"],
+      "patterns": ["tartan plaid", "graphic/band prints", "distressed texture"],
+      "fabrics": ["leather", "denim", "PVC", "mesh"],
+      "formality": ["casual"],
+      "avoid": ["soft pastels", "flowing/romantic silhouettes", "delicate fabrics"]
+    },
+    {
+      "id": "old_money_quiet_luxury",
+      "colors": ["cream", "navy", "camel", "forest green", "white"],
+      "color_notes": "understated, no logos",
+      "silhouette": ["tailored", "relaxed-structured"],
+      "patterns": ["solid", "subtle herringbone/houndstooth", "thin stripes"],
+      "fabrics": ["cashmere", "wool", "high-quality cotton", "silk"],
+      "formality": ["smart-casual", "formal"],
+      "avoid": ["visible branding", "synthetic fabrics", "bold graphics", "distressing"]
+    },
+    {
+      "id": "techwear",
+      "colors": ["black", "grey", "olive", "muted tones"],
+      "color_notes": "tonal, utilitarian",
+      "silhouette": ["layered", "utilitarian", "asymmetric zips", "tapered/cargo"],
+      "patterns": ["minimal", "seam/paneling as detail"],
+      "fabrics": ["technical/water-resistant", "nylon", "Gore-Tex-type"],
+      "formality": ["casual"],
+      "avoid": ["natural soft fabrics (linen, lace)", "bright pastels", "classic tailoring"]
+    },
+    {
+      "id": "western_country",
+      "colors": ["brown", "tan", "denim blue", "rust", "cream"],
+      "color_notes": "warm earth tones",
+      "silhouette": ["fitted-through-body", "structured details (yokes, fringe)"],
+      "patterns": ["plaid", "paisley (bandana-style)", "embroidery"],
+      "fabrics": ["denim", "leather", "suede", "cotton twill"],
+      "formality": ["casual"],
+      "avoid": ["synthetic/sporty fabrics", "minimalist monochrome", "delicate romantic fabrics"]
+    },
+    {
+      "id": "glam_evening",
+      "colors": ["black", "emerald", "deep red", "royal blue", "gold/silver metallics"],
+      "color_notes": "jewel tones and metallics",
+      "silhouette": ["fitted", "body-conscious", "dramatic details (sequins, structured bust)"],
+      "patterns": ["solid with sheen", "sequin/metallic texture"],
+      "fabrics": ["satin", "sequin", "velvet", "silk"],
+      "formality": ["formal"],
+      "avoid": ["casual fabrics (denim, jersey)", "flat matte minimalist looks", "distressing"]
+    },
+    {
+      "id": "artsy_eclectic",
+      "colors": ["unconventional combinations", "color-blocking", "clashing brights"],
+      "color_notes": "intentional rule-breaking; treat as modifier not fixed palette",
+      "silhouette": ["mixed proportions", "asymmetric"],
+      "patterns": ["abstract prints", "mixed patterns within outfit"],
+      "fabrics": ["varied/mixed (knit + structured + sheer)"],
+      "formality": ["casual", "smart-casual"],
+      "avoid": [],
+      "notes": "Defined by unexpected combination rather than fixed attributes. Consider as a low-confidence fallback or constraint-loosening modifier on top of the primary archetype."
+    },
+    {
+      "id": "scandinavian_minimal",
+      "colors": ["white", "grey", "black", "muted blue", "soft taupe"],
+      "color_notes": "cool-toned, airy minimalism",
+      "silhouette": ["relaxed", "clean lines", "oversized knitwear"],
+      "patterns": ["solid", "minimal geometric"],
+      "fabrics": ["wool", "cotton", "knit"],
+      "formality": ["casual", "smart-casual"],
+      "avoid": ["bright colors", "ornate patterns", "logos"]
+    },
+    {
+      "id": "military_utility",
+      "colors": ["olive", "khaki", "black", "grey", "camo print"],
+      "color_notes": "muted, tonal",
+      "silhouette": ["structured", "boxy", "cargo pockets", "belted"],
+      "patterns": ["camo", "solid", "minimal hardware detail"],
+      "fabrics": ["cotton twill", "canvas", "nylon"],
+      "formality": ["casual"],
+      "avoid": ["delicate fabrics", "pastels", "romantic silhouettes"]
+    },
+    {
+      "id": "pinup_vintage_50s",
+      "colors": ["red", "white", "navy", "pastel", "polka dot combos"],
+      "color_notes": "bright, retro-cheerful",
+      "silhouette": ["fitted bodice", "full skirt/A-line", "high-waisted"],
+      "patterns": ["polka dot", "cherry/floral print", "gingham"],
+      "fabrics": ["cotton", "rayon", "taffeta"],
+      "formality": ["casual", "smart-casual"],
+      "avoid": ["oversized streetwear", "technical fabrics", "grunge distressing"]
+    },
+    {
+      "id": "skater_surf",
+      "colors": ["faded/washed tones", "primary color accents", "graphic combos"],
+      "color_notes": "casual, sun-faded feel",
+      "silhouette": ["loose", "relaxed", "knee-length shorts", "baggy"],
+      "patterns": ["graphic prints", "tie-dye", "logo"],
+      "fabrics": ["cotton", "terry", "denim", "canvas"],
+      "formality": ["casual"],
+      "avoid": ["tailored pieces", "formalwear", "luxury fabrics"]
+    },
+    {
+      "id": "japanese_street_avant_garde",
+      "colors": ["black", "white", "grey", "occasional bold accent"],
+      "color_notes": "high-contrast monochrome",
+      "silhouette": ["asymmetric", "deconstructed", "oversized/draped layering"],
+      "patterns": ["solid", "raw edges/seams as detail", "occasional graphic"],
+      "fabrics": ["cotton", "wool", "technical blends"],
+      "formality": ["casual", "smart-casual"],
+      "avoid": ["preppy patterns (gingham, argyle)", "pastel romantic fabrics"]
+    },
+    {
+      "id": "tropical_vacation",
+      "colors": ["bright multicolor", "tropical hues (turquoise, coral, yellow)"],
+      "color_notes": "vivid, high saturation",
+      "silhouette": ["relaxed", "loose", "short/flowy lengths"],
+      "patterns": ["floral", "palm/tropical print", "tie-dye"],
+      "fabrics": ["linen", "rayon", "lightweight cotton"],
+      "formality": ["casual"],
+      "avoid": ["dark monochrome", "heavy fabrics", "formal tailoring"]
+    },
+    {
+      "id": "biker_moto",
+      "colors": ["black", "dark brown", "metallic hardware accents"],
+      "color_notes": "dark, tonal with metal accents",
+      "silhouette": ["fitted", "structured shoulders", "asymmetric zips"],
+      "patterns": ["solid", "minimal", "hardware as detail"],
+      "fabrics": ["leather", "heavy denim", "technical blends"],
+      "formality": ["casual"],
+      "avoid": ["pastels", "soft/flowy fabrics", "preppy patterns"]
+    },
+    {
+      "id": "normcore",
+      "colors": ["beige", "grey", "white", "denim blue", "muted primary colors"],
+      "color_notes": "deliberately unremarkable, average tones",
+      "silhouette": ["regular fit", "unstructured", "no exaggeration either way"],
+      "patterns": ["solid", "basic stripes"],
+      "fabrics": ["cotton", "denim", "jersey"],
+      "formality": ["casual"],
+      "avoid": ["logos", "statement pieces", "dramatic silhouettes", "luxury fabrics"]
+    },
+    {
+      "id": "art_deco_glamour",
+      "colors": ["black", "gold", "ivory", "deep jewel tones"],
+      "color_notes": "high-contrast metallics with rich darks",
+      "silhouette": ["fitted", "geometric structure", "dropped waist/column lines"],
+      "patterns": ["geometric", "fan/sunburst motifs", "metallic accents"],
+      "fabrics": ["silk", "velvet", "satin", "beading"],
+      "formality": ["formal"],
+      "avoid": ["casual fabrics", "athletic wear", "distressing"]
+    },
+    {
+      "id": "gorpcore",
+      "colors": ["earth tones", "olive", "burnt orange", "muted brights"],
+      "color_notes": "outdoor/utility tones with occasional brights",
+      "silhouette": ["functional layering", "relaxed fit", "cargo details"],
+      "patterns": ["solid", "color-blocked panels", "technical branding"],
+      "fabrics": ["technical/synthetic", "fleece", "nylon", "Gore-Tex-type"],
+      "formality": ["casual"],
+      "avoid": ["delicate fabrics (silk, lace)", "tailored formalwear", "pastel romantic palettes"]
+    },
+    {
+      "id": "balletcore",
+      "colors": ["soft pink", "cream", "white", "pale grey"],
+      "color_notes": "very light, soft pastels",
+      "silhouette": ["fitted bodice", "wrap details", "flowy skirts", "cropped cardigans"],
+      "patterns": ["solid", "subtle lace trim"],
+      "fabrics": ["knit", "tulle", "satin ribbon detail", "soft cotton"],
+      "formality": ["casual", "smart-casual"],
+      "avoid": ["dark/heavy fabrics", "graphic prints", "oversized streetwear"]
+    },
+    {
+      "id": "office_siren",
+      "colors": ["black", "white", "grey", "deep red accent"],
+      "color_notes": "high-contrast, sleek",
+      "silhouette": ["fitted", "pencil skirts", "tailored with body-conscious cut"],
+      "patterns": ["solid", "pinstripe"],
+      "fabrics": ["structured cotton/wool blend", "satin accents"],
+      "formality": ["smart-casual", "formal"],
+      "avoid": ["casual streetwear", "loose/oversized fits", "distressing"]
+    },
+    {
+      "id": "festival_eclectic",
+      "colors": ["bright multicolor", "metallics", "neon accents"],
+      "color_notes": "high-energy, mixed-bright",
+      "silhouette": ["fringe", "cropped", "layered accessories-heavy"],
+      "patterns": ["tie-dye", "sequins", "mixed prints"],
+      "fabrics": ["suede", "mesh", "sequin", "denim"],
+      "formality": ["casual"],
+      "avoid": ["formal tailoring", "muted minimalist palettes"]
+    },
+    {
+      "id": "scholarly_prep_ivy",
+      "colors": ["navy", "burgundy", "forest green", "cream", "mustard"],
+      "color_notes": "rich, traditional tones",
+      "silhouette": ["fitted-classic", "layered (sweater vests, blazers)"],
+      "patterns": ["argyle", "tartan", "stripes", "houndstooth"],
+      "fabrics": ["wool", "cotton", "corduroy"],
+      "formality": ["smart-casual", "formal"],
+      "avoid": ["streetwear graphics", "distressing", "athletic fabrics"]
+    }
+  ]
+}
