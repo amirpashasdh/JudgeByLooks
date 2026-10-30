@@ -71,10 +71,17 @@ def _workflow(base_scene_name: str, user_photo_name: str) -> dict:
         },
         NANO_BANANA_NODE_ID: {
             "inputs": {
-                "model": "Gemini Nano Banana 2.1",
+                # "Nano Banana 2 Lite" + 1K + MINIMAL thinking is the fastest valid
+                # combination this node supports (Lite only offers 1K resolution and
+                # MINIMAL/HIGH thinking -- no MEDIUM). Previously ran the heaviest
+                # possible config (2.1, 2K, HIGH), which measured 5-6+ min per job --
+                # far past the product's 1-minute requirement. Pair with a tightly
+                # cropped (person-only) user photo so there's less for the model to
+                # reason about.
+                "model": "Nano Banana 2 Lite",
                 "model.aspect_ratio": "auto",
-                "model.resolution": "2K",
-                "model.thinking_level": "HIGH",
+                "model.resolution": "1K",
+                "model.thinking_level": "MINIMAL",
                 "model.images.image_1": [BASE_SCENE_NODE_ID, 0],
                 "model.images.image_2": [USER_PHOTO_NODE_ID, 0],
                 "seed": random.randint(0, 2**31 - 1),
@@ -82,7 +89,7 @@ def _workflow(base_scene_name: str, user_photo_name: str) -> dict:
                 "prompt": [PROMPT_NODE_ID, 0],
             },
             "class_type": "GeminiNanoBanana2V2",
-            "_meta": {"title": "Nano Banana 2.1 — Person Swap"},
+            "_meta": {"title": "Nano Banana 2 Lite — Person Swap (fast)"},
         },
         SAVE_IMAGE_NODE_ID: {
             "inputs": {
