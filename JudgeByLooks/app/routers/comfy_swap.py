@@ -135,32 +135,23 @@ def _submit_workflow(workflow: dict) -> str:
     return r.json()["prompt_id"]
 
 
-TERMINAL_STATUSES = {"completed", "failed", "cancelled", "error", "job_failed"}
+TERMINAL_FAILURE_STATUSES = {"failed", "cancelled", "error", "job_failed"}
 
 
-def _job_error_message(prompt_id: str) -> str | None:
-    try:
-        r = requests.get(f"{BASE_URL}/api/jobs/{prompt_id}", headers=HEADERS, timeout=30)
-        r.raise_for_status()
-        err = r.json().get("error")
-        if err:
-            return err.get("message") if isinstance(err, dict) else str(err)
-    except Exception:
-        pass
-    return None
-
-
-def _job_output_image(prompt_id: str) -> dict:
-    r = requests.get(f"{BASE_URL}/api/jobs/{prompt_id}", headers=HEADERS, timeout=30)
+def _job_details(job_id: str) -> dict:
+    r = requests.get(f"{BASE_URL}/api/jobs/{job_id}", headers=HEADERS, timeout=30)
     r.raise_for_status()
-    data = r.json()
+    return r.json()
+
+
+def _find_output_image(data: dict) -> dict | None:
     outputs = data.get("outputs", {}) or {}
     node_ids = [SAVE_IMAGE_NODE_ID] + [n for n in outputs if n != SAVE_IMAGE_NODE_ID]
     for node_id in node_ids:
         for img in (outputs.get(node_id, {}) or {}).get("images", []):
             if img.get("type") == "output":
                 return img
-    raise RuntimeError("Job completed but produced no output image")
+    return None
 
 
 def _download_output(img: dict) -> bytes:
@@ -213,29 +204,36 @@ async def comfy_swap_start(photo: UploadFile = File(...)):
 @router.get("/comfy-swap/status/{job_id}")
 async def comfy_swap_status(job_id: str):
     """One quick, non-blocking status check -- call this repeatedly (e.g. every
-    3-5s) from the client until status is "completed" or "error"."""
+    3-5s) from the client until status is "completed" or "error".
+
+    Ground truth is whether an output image is actually present in
+    GET /api/jobs/{id} -- NOT the separate GET /api/job/{id}/status endpoint's
+    own status field, which was observed live staying stuck on a non-terminal
+    status for 20+ minutes after the job had genuinely completed (confirmed
+    completed independently via Comfy's own job-status tooling). Checking for
+    the real output directly sidesteps that staleness entirely.
+    """
     try:
-        r = requests.get(f"{BASE_URL}/api/job/{job_id}/status", headers=HEADERS, timeout=30)
-        r.raise_for_status()
-        body = r.json()
-        status = body.get("status") or body.get("raw_status") or body.get("job_status")
+        data = _job_details(job_id)
 
-        if status not in TERMINAL_STATUSES:
-            return {"status": "pending"}
+        img = _find_output_image(data)
+        if img is not None:
+            image_bytes = _download_output(img)
+            return {
+                "status": "completed",
+                "image_base64": base64.b64encode(image_bytes).decode("ascii"),
+            }
 
-        if status != "completed":
+        status = data.get("status") or data.get("raw_status") or data.get("job_status")
+        error = data.get("error")
+        if error or status in TERMINAL_FAILURE_STATUSES:
             detail = f"Comfy job ended with status '{status}'"
-            error_message = (body.get("error", {}) or {}).get("message") or _job_error_message(job_id)
-            if error_message:
-                detail += f": {error_message}"
+            if error:
+                message = error.get("message") if isinstance(error, dict) else str(error)
+                detail += f": {message}"
             return {"status": "error", "detail": detail}
 
-        img = _job_output_image(job_id)
-        image_bytes = _download_output(img)
-        return {
-            "status": "completed",
-            "image_base64": base64.b64encode(image_bytes).decode("ascii"),
-        }
+        return {"status": "pending"}
     except Exception as exc:
         print(f"[ERROR] /api/comfy-swap/status/{job_id}: {exc}")
         raise HTTPException(status_code=500, detail=str(exc))
