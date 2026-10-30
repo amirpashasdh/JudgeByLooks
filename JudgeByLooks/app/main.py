@@ -1,3 +1,4 @@
+import asyncio
 import os
 from pathlib import Path
 
@@ -64,13 +65,26 @@ async def startup():
     except Exception as e:
         print(f"[Startup] fashion.db ERROR: {e}")
 
-    try:
+    # Fire-and-forget: run_in_executor so this doesn't block the event loop
+    # (and isn't awaited here either) -- warm_cache() measured 90+s on Render's
+    # free-tier CPU, and awaiting that directly would delay the server from
+    # accepting any connections, including Render's own deploy health check,
+    # which could then time out and mark the deploy as failed. The server
+    # starts serving immediately; this fills the cache in the background. Any
+    # request landing before it finishes just takes the pre-existing lazy
+    # cache-populate path instead -- same as before this change, just a
+    # narrower window (only right after a cold boot, not every first caller).
+    async def _warm_cache_background():
         import time
+        loop = asyncio.get_event_loop()
         t0 = time.time()
-        matching_svc.warm_cache()
-        print(f"[Startup] matching cache warmed ✓  ({time.time() - t0:.1f}s)")
-    except Exception as e:
-        print(f"[Startup] matching cache warm-up ERROR: {e}")
+        try:
+            await loop.run_in_executor(None, matching_svc.warm_cache)
+            print(f"[Startup] matching cache warmed in background ✓  ({time.time() - t0:.1f}s)")
+        except Exception as e:
+            print(f"[Startup] matching cache warm-up ERROR: {e}")
+
+    asyncio.create_task(_warm_cache_background())
 
 
 @app.get("/health")
