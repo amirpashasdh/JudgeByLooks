@@ -32,25 +32,29 @@ def _top_keyword_tags(keywords: dict, limit: int) -> list[str]:
     return [k.replace("_", " ") for k, _ in top]
 
 
-def _style_reading(tags: list[str]) -> str:
-    labels = tags[:SENTENCE_KEYWORD_COUNT]
-    if not labels:
-        return "We couldn't get a confident read on your style from this photo."
+def _join_labels(labels: list[str]) -> str:
     if len(labels) == 1:
-        joined = labels[0]
-    else:
-        joined = ", ".join(labels[:-1]) + f" and {labels[-1]}"
-    return f"Your style reads as {joined}."
+        return labels[0]
+    return ", ".join(labels[:-1]) + f" and {labels[-1]}"
+
+
+def _style_reading(tags: list[str]) -> str:
+    primary = tags[:SENTENCE_KEYWORD_COUNT]
+    if not primary:
+        return "We couldn't get a confident read on your style from this photo."
+
+    secondary = tags[SENTENCE_KEYWORD_COUNT : SENTENCE_KEYWORD_COUNT * 2]
+    sentence = f"Your style reads as {_join_labels(primary)}."
+    if secondary:
+        sentence += f" It also carries notes of {_join_labels(secondary)}."
+    return sentence
 
 
 def _fallback_description(row: sqlite3.Row) -> str:
     # The scraped catalog has no real product descriptions (empty for every row) —
-    # synthesize a short one so cards aren't blank until real copy is backfilled.
+    # synthesize a short one (brand + category, no price) so cards aren't blank
+    # until real copy is backfilled.
     parts = [p for p in (row["brand"], row["category"]) if p]
-    price = row["price"]
-    currency = row["currency"] or ""
-    if price:
-        parts.append(f"{currency}{price:g}")
     return " · ".join(parts)
 
 
