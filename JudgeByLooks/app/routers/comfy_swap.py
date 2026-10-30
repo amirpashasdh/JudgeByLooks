@@ -135,7 +135,7 @@ def _submit_workflow(workflow: dict) -> str:
     return r.json()["prompt_id"]
 
 
-TERMINAL_FAILURE_STATUSES = {"failed", "cancelled", "error", "job_failed"}
+TERMINAL_STATUSES = {"completed", "failed", "cancelled", "error", "job_failed"}
 
 
 def _job_details(job_id: str) -> dict:
@@ -206,12 +206,12 @@ async def comfy_swap_status(job_id: str):
     """One quick, non-blocking status check -- call this repeatedly (e.g. every
     3-5s) from the client until status is "completed" or "error".
 
-    Ground truth is whether an output image is actually present in
-    GET /api/jobs/{id} -- NOT the separate GET /api/job/{id}/status endpoint's
-    own status field, which was observed live staying stuck on a non-terminal
-    status for 20+ minutes after the job had genuinely completed (confirmed
-    completed independently via Comfy's own job-status tooling). Checking for
-    the real output directly sidesteps that staleness entirely.
+    Checks GET /api/jobs/{id} for an actual output image, since a job can be
+    terminal ("completed") with no image at all -- confirmed live: Comfy's own
+    job-status tooling reported one real job as "completed" with zero fetchable
+    output (job.empty_output), seemingly a one-off generation failure that
+    never surfaces as a job-level error. Treat that the same as any other
+    terminal-without-image outcome: an error, not an endless "pending".
     """
     try:
         data = _job_details(job_id)
@@ -226,8 +226,8 @@ async def comfy_swap_status(job_id: str):
 
         status = data.get("status") or data.get("raw_status") or data.get("job_status")
         error = data.get("error")
-        if error or status in TERMINAL_FAILURE_STATUSES:
-            detail = f"Comfy job ended with status '{status}'"
+        if error or status in TERMINAL_STATUSES:
+            detail = f"Comfy job ended with status '{status}' and produced no image"
             if error:
                 message = error.get("message") if isinstance(error, dict) else str(error)
                 detail += f": {message}"
