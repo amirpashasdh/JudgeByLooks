@@ -14,7 +14,9 @@ router = APIRouter()
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
 ALLOWED_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
 
-RECOMMENDATION_COUNT = 6
+RECOMMENDATION_COUNT = 10
+KEYWORD_TAG_COUNT = 8
+SENTENCE_KEYWORD_COUNT = 4
 
 STYLE_KEYWORDS_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "style-keywords")
@@ -22,14 +24,18 @@ STYLE_KEYWORDS_DIR = os.path.abspath(
 FASHION_DB = os.path.join(STYLE_KEYWORDS_DIR, "fashion.db")
 
 
-def _style_reading(keywords: dict) -> str:
+def _top_keyword_tags(keywords: dict, limit: int) -> list[str]:
     top = sorted(
         ((k, v) for k, v in keywords.items() if v and v > 0.3),
         key=lambda kv: -kv[1],
-    )[:4]
-    if not top:
+    )[:limit]
+    return [k.replace("_", " ") for k, _ in top]
+
+
+def _style_reading(tags: list[str]) -> str:
+    labels = tags[:SENTENCE_KEYWORD_COUNT]
+    if not labels:
         return "We couldn't get a confident read on your style from this photo."
-    labels = [k.replace("_", " ") for k, _ in top]
     if len(labels) == 1:
         joined = labels[0]
     else:
@@ -113,13 +119,16 @@ async def style_check(photo: UploadFile = File(...)):
             for m in top_matches
         ]
 
+        tags = _top_keyword_tags(keywords, limit=KEYWORD_TAG_COUNT)
+
         elapsed = time.time() - t0
         print(f"[POST /api/style-check] {session_id} -> {len(recommendations)} items ({elapsed:.1f}s)")
 
         return {
             "session_id": session_id,
             "person_id": person_id,
-            "style_reading": _style_reading(keywords),
+            "style_reading": _style_reading(tags),
+            "keywords": tags,
             "recommendations": recommendations,
         }
     except Exception as exc:
