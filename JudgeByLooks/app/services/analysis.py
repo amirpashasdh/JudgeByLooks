@@ -8,15 +8,6 @@ STYLE_KEYWORDS_DIR = os.path.abspath(
 )
 
 
-_detector_instance = None
-
-def _get_detector():
-    global _detector_instance
-    if _detector_instance is None:
-        from detector import PersonDetector
-        _detector_instance = PersonDetector()
-    return _detector_instance
-
 def _ensure_path():
     if STYLE_KEYWORDS_DIR not in sys.path:
         sys.path.insert(0, STYLE_KEYWORDS_DIR)
@@ -51,17 +42,18 @@ def run_analysis(image_path: str, session_id: str, taxonomy_mode: str = "both") 
         shutil.copy2(image_path, dest)
 
         init_db()
-        detector = _get_detector()
         analyzer = StyleAnalyzer(taxonomy_mode=taxonomy_mode)
 
         frame = cv2.imread(image_path)
         if frame is None:
             raise ValueError(f"Could not read image: {image_path}")
 
-        crops = detector.get_person_crops(frame)
-        crop = max(crops, key=lambda c: c.shape[0] * c.shape[1]) if crops else frame
-
-        brief = analyzer.analyze(crop)
+        # Claude Vision analyses the full frame directly -- no local person-detection
+        # pre-crop needed (that used ultralytics/torch, which was both the Render
+        # free-tier OOM cause and a torch/torchvision ABI mismatch; this fallback
+        # path -- full frame, no crop -- was already exercised whenever YOLO found
+        # no person).
+        brief = analyzer.analyze(frame)
         if not brief:
             # fallback empty brief
             brief = {
