@@ -1,10 +1,9 @@
+import base64
 import os
 import random
-import time
 
 import requests
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from fastapi.responses import Response
 
 router = APIRouter()
 
@@ -23,8 +22,6 @@ USER_PHOTO_NODE_ID = "2"
 PROMPT_NODE_ID = "4"
 NANO_BANANA_NODE_ID = "5"
 SAVE_IMAGE_NODE_ID = "6"
-JOB_TIMEOUT_S = 320
-POLL_JOB_S = 3
 
 PROMPT_TEXT = (
     "You are given exactly two separate reference images: IMAGE_1 and IMAGE_2.\n\n"
@@ -153,23 +150,6 @@ def _job_error_message(prompt_id: str) -> str | None:
     return None
 
 
-def _wait_for_job(prompt_id: str) -> tuple[str, str | None]:
-    deadline = time.time() + JOB_TIMEOUT_S
-    while time.time() < deadline:
-        r = requests.get(
-            f"{BASE_URL}/api/job/{prompt_id}/status", headers=HEADERS, timeout=30
-        )
-        r.raise_for_status()
-        body = r.json()
-        status = body.get("status") or body.get("raw_status") or body.get("job_status")
-        if status in TERMINAL_STATUSES:
-            if status != "completed":
-                return status, (body.get("error", {}) or {}).get("message") or _job_error_message(prompt_id)
-            return status, None
-        time.sleep(POLL_JOB_S)
-    return "timeout", _job_error_message(prompt_id)
-
-
 def _job_output_image(prompt_id: str) -> dict:
     r = requests.get(f"{BASE_URL}/api/jobs/{prompt_id}", headers=HEADERS, timeout=30)
     r.raise_for_status()
@@ -199,8 +179,16 @@ def _download_output(img: dict) -> bytes:
     return r.content
 
 
-@router.post("/comfy-swap")
-async def comfy_swap(photo: UploadFile = File(...)):
+@router.post("/comfy-swap/start")
+async def comfy_swap_start(photo: UploadFile = File(...)):
+    """Uploads the photo and submits the Comfy job, returning immediately.
+    Generation itself (often several minutes) happens on Comfy Cloud's side --
+    poll GET /api/comfy-swap/status/{job_id} instead of waiting on this request.
+    A single long-blocking request previously raced a fixed server-side timeout
+    against Comfy's actual (variable) generation time and lost intermittently
+    even though the job had genuinely completed -- splitting submit from poll
+    removes that race entirely.
+    """
     if not API_KEY:
         raise HTTPException(status_code=500, detail="COMFY_CLOUD_API_KEY is not configured")
 
@@ -208,32 +196,46 @@ async def comfy_swap(photo: UploadFile = File(...)):
     if photo.content_type not in ALLOWED_TYPES or ext not in ALLOWED_EXTS:
         raise HTTPException(status_code=400, detail="Only jpeg, png, webp images accepted")
 
-    t0 = time.time()
     try:
         base_scene_name = _ensure_base_scene_uploaded()
-
         photo_bytes = await photo.read()
         user_photo_name = _upload_image(photo_bytes, photo.filename or "upload.jpg")
-
         workflow = _workflow(base_scene_name, user_photo_name)
         prompt_id = _submit_workflow(workflow)
-
-        status, error_message = _wait_for_job(prompt_id)
-        if status != "completed":
-            detail = f"Comfy job ended with status '{status}' (prompt_id={prompt_id})"
-            if error_message:
-                detail += f": {error_message}"
-            raise HTTPException(status_code=502, detail=detail)
-
-        img = _job_output_image(prompt_id)
-        image_bytes = _download_output(img)
-
-        elapsed = time.time() - t0
-        print(f"[POST /api/comfy-swap] prompt_id={prompt_id} -> {len(image_bytes)} bytes ({elapsed:.1f}s)")
-
-        return Response(content=image_bytes, media_type="image/png")
+        return {"job_id": prompt_id}
     except HTTPException:
         raise
     except Exception as exc:
-        print(f"[ERROR] /api/comfy-swap: {exc}")
+        print(f"[ERROR] /api/comfy-swap/start: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.get("/comfy-swap/status/{job_id}")
+async def comfy_swap_status(job_id: str):
+    """One quick, non-blocking status check -- call this repeatedly (e.g. every
+    3-5s) from the client until status is "completed" or "error"."""
+    try:
+        r = requests.get(f"{BASE_URL}/api/job/{job_id}/status", headers=HEADERS, timeout=30)
+        r.raise_for_status()
+        body = r.json()
+        status = body.get("status") or body.get("raw_status") or body.get("job_status")
+
+        if status not in TERMINAL_STATUSES:
+            return {"status": "pending"}
+
+        if status != "completed":
+            detail = f"Comfy job ended with status '{status}'"
+            error_message = (body.get("error", {}) or {}).get("message") or _job_error_message(job_id)
+            if error_message:
+                detail += f": {error_message}"
+            return {"status": "error", "detail": detail}
+
+        img = _job_output_image(job_id)
+        image_bytes = _download_output(img)
+        return {
+            "status": "completed",
+            "image_base64": base64.b64encode(image_bytes).decode("ascii"),
+        }
+    except Exception as exc:
+        print(f"[ERROR] /api/comfy-swap/status/{job_id}: {exc}")
         raise HTTPException(status_code=500, detail=str(exc))
