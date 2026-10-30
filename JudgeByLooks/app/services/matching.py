@@ -38,6 +38,16 @@ _products_cache: list[dict] | None = None
 _vecs_cache: dict = {}
 
 
+def warm_cache() -> None:
+    """Populate the product+vector cache now instead of lazily on the first
+    request. Live-measured gap: building this cache (reading 11,487 rows +
+    building their keyword vectors) took 18s locally but 90+s on Render's
+    throttled free-tier CPU -- without this, whichever real user's request
+    happens to be first after a cold boot eats that cost. Call from the app's
+    startup hook so it happens during boot instead."""
+    _load_cached_products()
+
+
 def _load_cached_products() -> list[dict]:
     global _products_cache
     if _products_cache is None:

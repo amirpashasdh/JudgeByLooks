@@ -17,6 +17,7 @@ from fastapi.responses import RedirectResponse
 
 from app.db import get_db, ensure_recommendations_table
 from app.routers import upload, recommendations, ratings, favorites, browse, style_check, comfy_swap
+from app.services import matching as matching_svc
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 PORT = int(os.getenv("PORT", 8000))
@@ -62,6 +63,14 @@ async def startup():
         print(f"[Startup] fashion.db connected ✓  ({count} products)")
     except Exception as e:
         print(f"[Startup] fashion.db ERROR: {e}")
+
+    try:
+        import time
+        t0 = time.time()
+        matching_svc.warm_cache()
+        print(f"[Startup] matching cache warmed ✓  ({time.time() - t0:.1f}s)")
+    except Exception as e:
+        print(f"[Startup] matching cache warm-up ERROR: {e}")
 
 
 @app.get("/health")
