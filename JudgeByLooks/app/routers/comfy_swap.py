@@ -133,18 +133,36 @@ def _submit_workflow(workflow: dict) -> str:
     return r.json()["prompt_id"]
 
 
-def _wait_for_job(prompt_id: str) -> str:
+TERMINAL_STATUSES = {"completed", "failed", "cancelled", "error", "job_failed"}
+
+
+def _job_error_message(prompt_id: str) -> str | None:
+    try:
+        r = requests.get(f"{BASE_URL}/api/jobs/{prompt_id}", headers=HEADERS, timeout=30)
+        r.raise_for_status()
+        err = r.json().get("error")
+        if err:
+            return err.get("message") if isinstance(err, dict) else str(err)
+    except Exception:
+        pass
+    return None
+
+
+def _wait_for_job(prompt_id: str) -> tuple[str, str | None]:
     deadline = time.time() + JOB_TIMEOUT_S
     while time.time() < deadline:
         r = requests.get(
             f"{BASE_URL}/api/job/{prompt_id}/status", headers=HEADERS, timeout=30
         )
         r.raise_for_status()
-        status = r.json().get("status")
-        if status in ("completed", "failed", "cancelled"):
-            return status
+        body = r.json()
+        status = body.get("status") or body.get("raw_status") or body.get("job_status")
+        if status in TERMINAL_STATUSES:
+            if status != "completed":
+                return status, (body.get("error", {}) or {}).get("message") or _job_error_message(prompt_id)
+            return status, None
         time.sleep(POLL_JOB_S)
-    return "timeout"
+    return "timeout", _job_error_message(prompt_id)
 
 
 def _job_output_image(prompt_id: str) -> dict:
@@ -195,12 +213,12 @@ async def comfy_swap(photo: UploadFile = File(...)):
         workflow = _workflow(base_scene_name, user_photo_name)
         prompt_id = _submit_workflow(workflow)
 
-        status = _wait_for_job(prompt_id)
+        status, error_message = _wait_for_job(prompt_id)
         if status != "completed":
-            raise HTTPException(
-                status_code=502,
-                detail=f"Comfy job ended with status '{status}' (prompt_id={prompt_id})",
-            )
+            detail = f"Comfy job ended with status '{status}' (prompt_id={prompt_id})"
+            if error_message:
+                detail += f": {error_message}"
+            raise HTTPException(status_code=502, detail=detail)
 
         img = _job_output_image(prompt_id)
         image_bytes = _download_output(img)
