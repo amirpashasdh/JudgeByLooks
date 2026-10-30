@@ -50,26 +50,21 @@ def _style_reading(tags: list[str]) -> str:
     return sentence
 
 
-def _fallback_description(row: sqlite3.Row) -> str:
-    # The scraped catalog has no real product descriptions (empty for every row) —
-    # synthesize a short one (brand + category, no price) so cards aren't blank
-    # until real copy is backfilled.
-    parts = [p for p in (row["brand"], row["category"]) if p]
-    return " · ".join(parts)
-
-
 def _descriptions_for(product_ids: list[str]) -> dict[str, str]:
+    # The scraped catalog has no real product descriptions (empty for every row) —
+    # return "" rather than synthesizing a brand/category breadcrumb; the frontend
+    # omits the description line when it's empty.
     if not product_ids:
         return {}
     conn = sqlite3.connect(FASHION_DB)
     conn.row_factory = sqlite3.Row
     placeholders = ",".join("?" for _ in product_ids)
     rows = conn.execute(
-        f"SELECT id, brand, category, price, currency, description FROM products WHERE id IN ({placeholders})",
+        f"SELECT id, description FROM products WHERE id IN ({placeholders})",
         product_ids,
     ).fetchall()
     conn.close()
-    return {r["id"]: (r["description"] or _fallback_description(r)) for r in rows}
+    return {r["id"]: (r["description"] or "") for r in rows}
 
 
 @router.post("/style-check")
