@@ -123,10 +123,15 @@ def _ensure_base_scene_uploaded() -> str:
 
 
 def _submit_workflow(workflow: dict) -> str:
+    # Partner/API nodes (GeminiNanoBanana2V2 here) authenticate separately from the
+    # general X-API-Key header -- the web canvas injects this automatically on every
+    # run, but a raw REST submission has to carry it explicitly or those nodes fail
+    # with "Unauthorized: Please login first to use this node" even though job
+    # submission itself succeeds. https://docs.comfy.org/development/comfyui-server/api-key-integration
     r = requests.post(
         f"{BASE_URL}/api/prompt",
         headers={**HEADERS, "Content-Type": "application/json"},
-        json={"prompt": workflow},
+        json={"prompt": workflow, "extra_data": {"api_key_comfy_org": API_KEY}},
         timeout=60,
     )
     r.raise_for_status()
