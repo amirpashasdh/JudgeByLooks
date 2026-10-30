@@ -4,6 +4,7 @@ import tempfile
 import time
 
 from fastapi import APIRouter, UploadFile, File, HTTPException
+from pydantic import BaseModel
 
 from app.services import analysis as analysis_svc
 from app.services import matching as matching_svc
@@ -22,6 +23,13 @@ STYLE_KEYWORDS_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "style-keywords")
 )
 FASHION_DB = os.path.join(STYLE_KEYWORDS_DIR, "fashion.db")
+
+# Bridges /style-read -> /style-recommendations: the brief/run_folder a person_id
+# needs for matching, stashed in-process between the two calls. Single-use by
+# design (popped on read) -- a second /style-recommendations call for the same
+# person_id means either a genuine double-call or the process restarted and lost
+# it, and both should 404 rather than silently matching against nothing.
+_pending_briefs: dict[int, dict] = {}
 
 
 def _top_keyword_tags(keywords: dict, limit: int) -> list[str]:
@@ -51,7 +59,7 @@ def _style_reading(tags: list[str]) -> str:
 
 
 def _descriptions_for(product_ids: list[str]) -> dict[str, str]:
-    # The scraped catalog has no real product descriptions (empty for every row) —
+    # The scraped catalog has no real product descriptions (empty for every row) --
     # return "" rather than synthesizing a brand/category breadcrumb; the frontend
     # omits the description line when it's empty.
     if not product_ids:
@@ -67,8 +75,11 @@ def _descriptions_for(product_ids: list[str]) -> dict[str, str]:
     return {r["id"]: (r["description"] or "") for r in rows}
 
 
-@router.post("/style-check")
-async def style_check(photo: UploadFile = File(...)):
+@router.post("/style-read")
+async def style_read(photo: UploadFile = File(...)):
+    """Stage 1 of 2: Claude analysis only. Returns the style reading + keywords
+    immediately so the frontend can show them without waiting on matching too.
+    Call /api/style-recommendations next with the returned person_id."""
     t0 = time.time()
 
     ext = os.path.splitext(photo.filename or "")[1].lower()
@@ -86,12 +97,67 @@ async def style_check(photo: UploadFile = File(...)):
 
         result = analysis_svc.run_analysis(tmp_path, session_id, taxonomy_mode="both")
         person_id = result["person_id"]
-        brief = result["brief"]
-        run_folder = result["run_folder"]
         keywords = result["keywords"]
 
-        params = {
+        _pending_briefs[person_id] = {
+            "brief": result["brief"],
+            "run_folder": result["run_folder"],
             "session_id": session_id,
+        }
+
+        tags = _top_keyword_tags(keywords, limit=KEYWORD_TAG_COUNT)
+
+        elapsed = time.time() - t0
+        print(f"[POST /api/style-read] {session_id} person_id={person_id} ({elapsed:.1f}s)")
+
+        return {
+            "session_id": session_id,
+            "person_id": person_id,
+            "style_reading": _style_reading(tags),
+            "keywords": tags,
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"[ERROR] /api/style-read: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        if tmp_path:
+            try:
+                os.unlink(tmp_path)
+            except Exception:
+                pass
+
+
+class StyleRecommendationsRequest(BaseModel):
+    person_id: int
+
+
+@router.post("/style-recommendations")
+async def style_recommendations(body: StyleRecommendationsRequest):
+    """Stage 2 of 2: matching only, keyed by the person_id from /api/style-read.
+    person_id is single-use -- a second call with the same one 404s, since the
+    pending brief it needs has already been consumed (or the process restarted
+    and lost it)."""
+    t0 = time.time()
+
+    pending = _pending_briefs.pop(body.person_id, None)
+    if pending is None:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"No pending analysis for person_id={body.person_id} -- "
+                "either already used, or the backend restarted since /api/style-read. "
+                "Re-run /api/style-read."
+            ),
+        )
+
+    try:
+        brief = pending["brief"]
+        run_folder = pending["run_folder"]
+
+        params = {
+            "session_id": pending["session_id"],
             "taxonomy_mode": "both",
             "price_tier_strategy": "match",
             "tier_shift": 0,
@@ -99,7 +165,7 @@ async def style_check(photo: UploadFile = File(...)):
             "silhouette_adjustment": True,
             "gender": brief.get("gender", "unisex"),
         }
-        matches = matching_svc.run_matching(person_id, run_folder, brief=brief, params=params)
+        matches = matching_svc.run_matching(body.person_id, run_folder, brief=brief, params=params)
         top_matches = matches[:RECOMMENDATION_COUNT]
 
         descriptions = _descriptions_for([m["product_id"] for m in top_matches])
@@ -118,24 +184,13 @@ async def style_check(photo: UploadFile = File(...)):
             for m in top_matches
         ]
 
-        tags = _top_keyword_tags(keywords, limit=KEYWORD_TAG_COUNT)
-
         elapsed = time.time() - t0
-        print(f"[POST /api/style-check] {session_id} -> {len(recommendations)} items ({elapsed:.1f}s)")
+        print(f"[POST /api/style-recommendations] person_id={body.person_id} -> {len(recommendations)} items ({elapsed:.1f}s)")
 
         return {
-            "session_id": session_id,
-            "person_id": person_id,
-            "style_reading": _style_reading(tags),
-            "keywords": tags,
+            "person_id": body.person_id,
             "recommendations": recommendations,
         }
     except Exception as exc:
-        print(f"[ERROR] /api/style-check: {exc}")
+        print(f"[ERROR] /api/style-recommendations: {exc}")
         raise HTTPException(status_code=500, detail=str(exc))
-    finally:
-        if tmp_path:
-            try:
-                os.unlink(tmp_path)
-            except Exception:
-                pass

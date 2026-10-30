@@ -4,6 +4,8 @@ import json
 import sqlite3
 from datetime import datetime
 
+import numpy as np
+
 STYLE_KEYWORDS_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..", "style-keywords")
 )
@@ -24,6 +26,42 @@ def _gender_match(product: dict, person_gender: str) -> bool:
 def _ensure_path():
     if STYLE_KEYWORDS_DIR not in sys.path:
         sys.path.insert(0, STYLE_KEYWORDS_DIR)
+
+
+# ── product + vector cache ────────────────────────────────────────────────────
+# run_matching() used to re-read all 11,487 fashion.db rows AND rebuild every
+# product's keyword vector from scratch on every single request -- the catalog
+# doesn't change between requests in the same process, so there's nothing to
+# invalidate. First request after a cold start still pays to populate this;
+# every request after that in the same process reuses it.
+_products_cache: list[dict] | None = None
+_vecs_cache: dict = {}
+
+
+def _load_cached_products() -> list[dict]:
+    global _products_cache
+    if _products_cache is None:
+        _ensure_path()
+        from match import row_to_vec
+
+        conn = sqlite3.connect(FASHION_DB)
+        conn.row_factory = sqlite3.Row
+        _products_cache = [dict(r) for r in conn.execute("SELECT * FROM products").fetchall()]
+        conn.close()
+        _vecs_cache.clear()
+        _vecs_cache.update({p["id"]: row_to_vec(p) for p in _products_cache})
+    return _products_cache
+
+
+def _vec_for(product: dict):
+    """Cached keyword vector for a product, falling back to computing it on the
+    fly if the product didn't come from _load_cached_products (shouldn't happen
+    in practice, but safer than a KeyError)."""
+    vec = _vecs_cache.get(product.get("id"))
+    if vec is None:
+        from match import row_to_vec
+        vec = row_to_vec(product)
+    return vec
 
 
 # ── price-tier helpers ────────────────────────────────────────────────────────
@@ -89,22 +127,22 @@ def _attr_match(product: dict, target: dict) -> float:
 
 # ── archetype/keyword style filter ───────────────────────────────────────────
 
-def _style_score(product: dict, style_scores: dict, taxonomy_mode: str) -> float:
-    """Return a style compatibility score [0,1] between product and person style_scores."""
+def _style_score(product: dict, person_vec, style_scores: dict, taxonomy_mode: str) -> float:
+    """Return a style compatibility score [0,1] between product and person style_scores.
+    person_vec is precomputed once by the caller (outside the per-candidate loop) --
+    this used to rebuild it from style_scores on every single call, which dominated
+    the cost of the gap-based retrieval loop (thousands of calls per request)."""
     score = 0.0
     if taxonomy_mode in ("archetypes", "both"):
         arch = style_scores.get("archetypes", {})
         for arch_id, person_weight in arch.items():
             prod_arch = product.get(f"arch_{arch_id}", 0.0) or 0.0
             score += float(person_weight) * float(prod_arch)
-    if taxonomy_mode in ("keywords", "both"):
-        from match import KEYWORDS, cosine, row_to_vec
-        kw = style_scores.get("keywords", {})
-        if kw:
-            person_vec = [float(kw.get(k, 0.0)) for k in KEYWORDS]
-            prod_vec   = row_to_vec(product)
-            kw_score   = cosine(person_vec, prod_vec)
-            score = (score + kw_score) / 2 if taxonomy_mode == "both" else kw_score
+    if taxonomy_mode in ("keywords", "both") and person_vec is not None:
+        from match import cosine
+        prod_vec = _vec_for(product)
+        kw_score = cosine(person_vec, prod_vec)
+        score = (score + kw_score) / 2 if taxonomy_mode == "both" else kw_score
     return float(score)
 
 
@@ -129,7 +167,7 @@ def _run_similarity(person: dict, products: list[dict], params: dict) -> list[di
             continue
         if not _gender_match(p, person_gender):
             continue
-        score = cosine(person_vec, row_to_vec(p))
+        score = cosine(person_vec, _vec_for(p))
         ranked.append((score, p))
 
     ranked.sort(key=lambda x: -x[0])
@@ -137,7 +175,7 @@ def _run_similarity(person: dict, products: list[dict], params: dict) -> list[di
 
     recs = []
     for i, (score, p) in enumerate(results):
-        kws = top_keywords(row_to_vec(p), 5)
+        kws = top_keywords(_vec_for(p), 5)
         recs.append({
             "rank": i + 1,
             "score": round(score, 4),
@@ -182,6 +220,16 @@ def _run_gap_based(person: dict, products: list[dict], brief: dict, params: dict
         # fall back to similarity if no recommendations in brief
         return _run_similarity(person, products, params)
 
+    # Precomputed once here instead of inside _style_score (which used to rebuild
+    # this same vector from style_scores on every one of the thousands of
+    # per-candidate calls below) -- None when there are no keyword scores, same
+    # as the old "if kw:" guard inside _style_score.
+    kw_scores = style_scores.get("keywords", {})
+    style_person_vec = None
+    if kw_scores and taxonomy_mode in ("keywords", "both"):
+        from match import KEYWORDS
+        style_person_vec = np.array([float(kw_scores.get(k, 0.0)) for k in KEYWORDS], dtype=np.float64)
+
     all_recs = []
     seen_product_ids = set()
 
@@ -208,7 +256,7 @@ def _run_gap_based(person: dict, products: list[dict], brief: dict, params: dict
                 # low confidence: color+formality only, skip style filter
                 style_sc = attr_score
             else:
-                style_sc = _style_score(p, style_scores, taxonomy_mode)
+                style_sc = _style_score(p, style_person_vec, style_scores, taxonomy_mode)
 
             combined = 0.6 * attr_score + 0.4 * style_sc
             slot_candidates.append((combined, p, slot))
@@ -242,7 +290,7 @@ def _run_gap_based(person: dict, products: list[dict], brief: dict, params: dict
 
     # fill footwear slots (guaranteed 2) — relax price tier if catalog is thin
     used_ids = {p.get("id") for _, p, _, _ in final}
-    from match import KEYWORDS, cosine, row_to_vec
+    from match import row_to_vec, cosine
     person_vec = row_to_vec(person)
 
     def _footwear_pool(tier_filter):
@@ -256,7 +304,7 @@ def _run_gap_based(person: dict, products: list[dict], brief: dict, params: dict
                 continue
             if not _gender_match(p, person_gender):
                 continue
-            pool.append((cosine(person_vec, row_to_vec(p)), p))
+            pool.append((cosine(person_vec, _vec_for(p)), p))
         return pool
 
     footwear_candidates = _footwear_pool(tier_targets)
@@ -280,7 +328,7 @@ def _run_gap_based(person: dict, products: list[dict], brief: dict, params: dict
                 continue
             if not _gender_match(p, person_gender):
                 continue
-            score = cosine(person_vec, row_to_vec(p))
+            score = cosine(person_vec, _vec_for(p))
             fallback.append((score, p))
         fallback.sort(key=lambda x: -x[0])
         for score, p in fallback[:10 - len(final)]:
@@ -342,10 +390,7 @@ def run_matching(
         raise RuntimeError(f"person_analysis id={person_id} not found")
     person = dict(row)
 
-    conn = sqlite3.connect(FASHION_DB)
-    conn.row_factory = sqlite3.Row
-    products = [dict(r) for r in conn.execute("SELECT * FROM products").fetchall()]
-    conn.close()
+    products = _load_cached_products()
 
     if not products:
         return []

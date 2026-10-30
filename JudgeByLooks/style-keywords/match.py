@@ -16,6 +16,8 @@ import os
 import sqlite3
 from datetime import datetime
 
+import numpy as np
+
 KEYWORDS_DB = os.path.join(os.path.dirname(__file__), "keywords.db")
 FASHION_DB  = os.path.join(os.path.dirname(__file__), "fashion.db")
 RESULTS_DIR = os.path.join(os.path.dirname(__file__), "results")
@@ -101,17 +103,21 @@ KEYWORDS = [
 
 # ── vector math ───────────────────────────────────────────────────────────────
 
-def cosine(a: list[float], b: list[float]) -> float:
-    dot  = sum(x * y for x, y in zip(a, b))
-    na   = math.sqrt(sum(x * x for x in a))
-    nb   = math.sqrt(sum(y * y for y in b))
+def cosine(a, b) -> float:
+    # Vectorized (numpy) instead of a pure-Python sum()/zip() loop -- this is
+    # called tens of thousands of times per request in the gap-based retrieval
+    # loop, where the per-call Python-loop overhead was a real bottleneck.
+    a = a if isinstance(a, np.ndarray) else np.asarray(a, dtype=np.float64)
+    b = b if isinstance(b, np.ndarray) else np.asarray(b, dtype=np.float64)
+    na = np.linalg.norm(a)
+    nb = np.linalg.norm(b)
     if na == 0 or nb == 0:
         return 0.0
-    return dot / (na * nb)
+    return float(np.dot(a, b) / (na * nb))
 
 
-def row_to_vec(row: dict) -> list[float]:
-    return [float(row.get(k) or 0.0) for k in KEYWORDS]
+def row_to_vec(row: dict) -> np.ndarray:
+    return np.array([float(row.get(k) or 0.0) for k in KEYWORDS], dtype=np.float64)
 
 
 # ── data loading ──────────────────────────────────────────────────────────────
