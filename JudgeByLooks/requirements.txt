@@ -3,7 +3,7 @@ uvicorn[standard]==0.27.1
 python-multipart==0.0.9
 pydantic==2.6.1
 numpy==1.26.4
-anthropic==0.21.3
+anthropic==0.109.1
 opencv-python-headless>=4.9.0
 Pillow>=10.0.0
 openpyxl==3.1.2
