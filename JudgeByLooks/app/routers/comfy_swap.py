@@ -1,9 +1,11 @@
 import base64
+import io
 import os
 import random
 
 import requests
 from fastapi import APIRouter, UploadFile, File, HTTPException
+from PIL import Image
 
 router = APIRouter()
 
@@ -17,6 +19,7 @@ HEADERS = {"X-API-Key": API_KEY}
 BASE_SCENE_PATH = os.path.join(
     os.path.dirname(__file__), "..", "static", "base_scene.png"
 )
+OUTPUT_SIZE = (996, 2646)  # exact final pixel size -- see _resize_to_output_size
 BASE_SCENE_NODE_ID = "1"
 USER_PHOTO_NODE_ID = "2"
 PROMPT_NODE_ID = "4"
@@ -177,6 +180,19 @@ def _download_output(img: dict) -> bytes:
     return r.content
 
 
+def _resize_to_output_size(image_bytes: bytes) -> bytes:
+    """Force the exact output pixel size regardless of what Comfy actually
+    rendered -- the Gemini node only exposes resolution tiers (1K/2K/4K) and
+    aspect-ratio presets, no raw pixel dimensions, and 996x2646 isn't a round
+    multiple of any of them. The base scene's own aspect ratio already matches
+    996:2646 (both ~0.376), so this is a uniform scale, not a crop."""
+    im = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    im = im.resize(OUTPUT_SIZE, Image.LANCZOS)
+    out = io.BytesIO()
+    im.save(out, format="PNG")
+    return out.getvalue()
+
+
 @router.post("/comfy-swap/start")
 async def comfy_swap_start(photo: UploadFile = File(...)):
     """Uploads the photo and submits the Comfy job, returning immediately.
@@ -226,6 +242,7 @@ async def comfy_swap_status(job_id: str):
         img = _find_output_image(data)
         if img is not None:
             image_bytes = _download_output(img)
+            image_bytes = _resize_to_output_size(image_bytes)
             return {
                 "status": "completed",
                 "image_base64": base64.b64encode(image_bytes).decode("ascii"),
