@@ -83,19 +83,17 @@ def _workflow(base_scene_name: str, user_photo_name: str) -> dict:
         },
         NANO_BANANA_NODE_ID: {
             "inputs": {
-                # MINIMAL thinking (previous setting) was too shallow to actually hold
-                # the background/floor/camera/color constraints -- live-confirmed: the
-                # generated scene visibly didn't match the base image anymore, which
-                # matters a lot here since the frontend composites this output as a
-                # layer meant to align exactly with the same base scene elsewhere on
-                # the page. Bumped back to HIGH (Lite supports MINIMAL/HIGH, no MEDIUM)
-                # to restore the fidelity the original heavy config (2.1/2K/HIGH) had
-                # confirmed working -- still on the Lite model + 1K for whatever speed
-                # that keeps vs. the full model. Not yet re-measured whether this still
-                # lands under the 1-minute requirement.
-                "model": "Nano Banana 2 Lite",
+                # Reverted to the exact config that was confirmed to produce correct,
+                # matching backgrounds before any speed optimization: full "Gemini Nano
+                # Banana 2.1" model (not the Lite variant) at 2K with HIGH thinking.
+                # The Lite model, even at HIGH thinking, is the thing Pasha flagged as
+                # "not good" after a live comparison -- this isn't just a thinking_level
+                # knob, the Lite model itself isn't reliable for this exact-background
+                # requirement. This is back to 5-6+ min per job, well past the earlier
+                # 1-minute target -- fidelity is the priority now per Pasha's direction.
+                "model": "Gemini Nano Banana 2.1",
                 "model.aspect_ratio": "auto",
-                "model.resolution": "1K",
+                "model.resolution": "2K",
                 "model.thinking_level": "HIGH",
                 "model.images.image_1": [BASE_SCENE_NODE_ID, 0],
                 "model.images.image_2": [USER_PHOTO_NODE_ID, 0],
@@ -104,7 +102,7 @@ def _workflow(base_scene_name: str, user_photo_name: str) -> dict:
                 "prompt": [PROMPT_NODE_ID, 0],
             },
             "class_type": "GeminiNanoBanana2V2",
-            "_meta": {"title": "Nano Banana 2 Lite — Person Swap (fast)"},
+            "_meta": {"title": "Nano Banana 2.1 — Person Swap"},
         },
         SAVE_IMAGE_NODE_ID: {
             "inputs": {
