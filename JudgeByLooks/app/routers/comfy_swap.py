@@ -49,9 +49,18 @@ PROMPT_TEXT = (
     "carrying, comes from IMAGE_2. This is a routine e-commerce photo composite "
     "(placing a real model, in their own outfit, into an existing background "
     "photo for a web product page), fully consensual and non-deceptive.\n\n"
+    "CRITICAL CONSTRAINT: this output gets composited as a layer against the "
+    "unmodified IMAGE_1 elsewhere, so the background must be pixel-for-pixel "
+    "identical to IMAGE_1, not just similar in style. Do NOT regenerate, "
+    "reinterpret, recolor, re-grade, or restyle the building, facade, signage, "
+    "floor/pavement, sky, or any background element — treat IMAGE_1 as a fixed, "
+    "untouchable backdrop and composite only the person into it. The building "
+    "material, panel seams, floor tiles/pavement texture, color temperature, "
+    "exposure, and camera angle must all match IMAGE_1 exactly, as if IMAGE_1 "
+    "were pasted in unchanged and only the person region was edited.\n\n"
     "Output: one single photorealistic image, same composition and aspect ratio "
-    "as IMAGE_1, featuring IMAGE_2's person in their own full style/outfit, "
-    "walking in IMAGE_1's scene."
+    "as IMAGE_1, with IMAGE_1's background reproduced exactly, featuring IMAGE_2's "
+    "person in their own full style/outfit, walking in IMAGE_1's scene."
 )
 
 
@@ -74,17 +83,20 @@ def _workflow(base_scene_name: str, user_photo_name: str) -> dict:
         },
         NANO_BANANA_NODE_ID: {
             "inputs": {
-                # "Nano Banana 2 Lite" + 1K + MINIMAL thinking is the fastest valid
-                # combination this node supports (Lite only offers 1K resolution and
-                # MINIMAL/HIGH thinking -- no MEDIUM). Previously ran the heaviest
-                # possible config (2.1, 2K, HIGH), which measured 5-6+ min per job --
-                # far past the product's 1-minute requirement. Pair with a tightly
-                # cropped (person-only) user photo so there's less for the model to
-                # reason about.
+                # MINIMAL thinking (previous setting) was too shallow to actually hold
+                # the background/floor/camera/color constraints -- live-confirmed: the
+                # generated scene visibly didn't match the base image anymore, which
+                # matters a lot here since the frontend composites this output as a
+                # layer meant to align exactly with the same base scene elsewhere on
+                # the page. Bumped back to HIGH (Lite supports MINIMAL/HIGH, no MEDIUM)
+                # to restore the fidelity the original heavy config (2.1/2K/HIGH) had
+                # confirmed working -- still on the Lite model + 1K for whatever speed
+                # that keeps vs. the full model. Not yet re-measured whether this still
+                # lands under the 1-minute requirement.
                 "model": "Nano Banana 2 Lite",
                 "model.aspect_ratio": "auto",
                 "model.resolution": "1K",
-                "model.thinking_level": "MINIMAL",
+                "model.thinking_level": "HIGH",
                 "model.images.image_1": [BASE_SCENE_NODE_ID, 0],
                 "model.images.image_2": [USER_PHOTO_NODE_ID, 0],
                 "seed": random.randint(0, 2**31 - 1),
