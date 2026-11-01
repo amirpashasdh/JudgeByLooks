@@ -97,15 +97,20 @@ async def style_read(photo: UploadFile = File(...)):
 
         result = analysis_svc.run_analysis(tmp_path, session_id, taxonomy_mode="both")
         person_id = result["person_id"]
+        brief = result["brief"]
         keywords = result["keywords"]
 
         _pending_briefs[person_id] = {
-            "brief": result["brief"],
+            "brief": brief,
             "run_folder": result["run_folder"],
             "session_id": session_id,
         }
 
         tags = _top_keyword_tags(keywords, limit=KEYWORD_TAG_COUNT)
+        # Prefer Claude's own written interpretation of the outfit over the
+        # templated keyword sentence -- only fall back to the template if the
+        # model didn't produce one (e.g. the low-confidence fallback brief).
+        style_reading = brief.get("interpretation") or _style_reading(tags)
 
         elapsed = time.time() - t0
         print(f"[POST /api/style-read] {session_id} person_id={person_id} ({elapsed:.1f}s)")
@@ -113,7 +118,7 @@ async def style_read(photo: UploadFile = File(...)):
         return {
             "session_id": session_id,
             "person_id": person_id,
-            "style_reading": _style_reading(tags),
+            "style_reading": style_reading,
             "keywords": tags,
         }
     except HTTPException:

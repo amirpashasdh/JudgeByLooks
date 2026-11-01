@@ -312,7 +312,13 @@ class StyleAnalyzer:
                     ],
                 }],
             )
-            raw_text = msg.content[0].text
+            # content[0] isn't reliably the text block -- newer models can prepend
+            # a ThinkingBlock (or other non-text block) before the actual answer,
+            # so find the first block that actually has text instead of indexing.
+            text_blocks = [b.text for b in msg.content if getattr(b, "type", None) == "text"]
+            if not text_blocks:
+                raise ValueError(f"No text block in Claude response (stop_reason={msg.stop_reason})")
+            raw_text = text_blocks[0]
             print(f"[analyzer] raw response length={len(raw_text)}, stop_reason={msg.stop_reason}")
             print(f"[analyzer] raw[:500]={raw_text[:500]}")
             return _parse_json(raw_text)
