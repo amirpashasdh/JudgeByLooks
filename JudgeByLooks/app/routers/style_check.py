@@ -1,3 +1,4 @@
+import json
 import os
 import sqlite3
 import tempfile
@@ -120,6 +121,9 @@ async def style_read(photo: UploadFile = File(...)):
             "person_id": person_id,
             "style_reading": style_reading,
             "keywords": tags,
+            # Full raw analysis JSON -- the frontend uses this purely as decorative
+            # background texture, not for display/reading.
+            "raw_brief": json.dumps(brief, indent=2),
         }
     except HTTPException:
         raise
