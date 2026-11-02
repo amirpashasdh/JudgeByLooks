@@ -3,6 +3,8 @@ import io
 import os
 import random
 
+import cv2
+import numpy as np
 import requests
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from PIL import Image
@@ -203,6 +205,58 @@ def _resize_to_output_size(image_bytes: bytes) -> bytes:
     return out.getvalue()
 
 
+_FACE_CASCADE: cv2.CascadeClassifier | None = None
+
+
+def _get_face_cascade() -> cv2.CascadeClassifier:
+    global _FACE_CASCADE
+    if _FACE_CASCADE is None:
+        _FACE_CASCADE = cv2.CascadeClassifier(
+            cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+        )
+    return _FACE_CASCADE
+
+
+def _blur_face(image_bytes: bytes) -> bytes:
+    """TEST ONLY, toggled via ?blur_face=true on the status endpoint -- not
+    wired into Comfy at all, just post-processes the already-downloaded image,
+    so it costs nothing extra and is trivial to turn back off. Deliberately
+    not done as a Comfy graph node: that would mean wiring a face-landmark
+    detector + mask + composite (several new, untested nodes) and paying for
+    a fresh 5-6min generation on every test iteration just to check the crop.
+
+    Candidates are restricted to the upper ~45% of the frame and the largest
+    one is picked -- confirmed on a real generated output that a plain Haar
+    cascade throws occasional false positives elsewhere in the frame (e.g.
+    shoe texture), and the person's head is always up there in this
+    composition, so this reliably picks the real face over noise.
+    """
+    arr = np.frombuffer(image_bytes, dtype=np.uint8)
+    img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+    if img is None:
+        return image_bytes
+
+    h, w = img.shape[:2]
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    faces = _get_face_cascade().detectMultiScale(
+        gray, scaleFactor=1.08, minNeighbors=5, minSize=(40, 40)
+    )
+    candidates = [f for f in faces if f[1] + f[3] / 2 < h * 0.45]
+    candidates.sort(key=lambda f: f[2] * f[3], reverse=True)
+    if not candidates:
+        return image_bytes
+
+    x, y, fw, fh = candidates[0]
+    pad_x, pad_y = int(fw * 0.35), int(fh * 0.45)
+    x0, y0 = max(0, x - pad_x), max(0, y - pad_y)
+    x1, y1 = min(w, x + fw + pad_x), min(h, y + fh + pad_y)
+    roi = img[y0:y1, x0:x1]
+    img[y0:y1, x0:x1] = cv2.GaussianBlur(roi, (0, 0), sigmaX=20)
+
+    ok, buf = cv2.imencode(".png", img)
+    return buf.tobytes() if ok else image_bytes
+
+
 @router.post("/comfy-swap/start")
 async def comfy_swap_start(photo: UploadFile = File(...)):
     """Uploads the photo and submits the Comfy job, returning immediately.
@@ -235,7 +289,7 @@ async def comfy_swap_start(photo: UploadFile = File(...)):
 
 
 @router.get("/comfy-swap/status/{job_id}")
-async def comfy_swap_status(job_id: str):
+async def comfy_swap_status(job_id: str, blur_face: bool = False):
     """One quick, non-blocking status check -- call this repeatedly (e.g. every
     3-5s) from the client until status is "completed" or "error".
 
@@ -245,6 +299,10 @@ async def comfy_swap_status(job_id: str):
     output (job.empty_output), seemingly a one-off generation failure that
     never surfaces as a job-level error. Treat that the same as any other
     terminal-without-image outcome: an error, not an endless "pending".
+
+    blur_face: TEST FLAG, default off. ?blur_face=true re-fetches the SAME
+    already-completed job's image and blurs the face before returning it --
+    no new Comfy job, no extra cost, safe to flip on/off per request.
     """
     try:
         data = _job_details(job_id)
@@ -253,6 +311,8 @@ async def comfy_swap_status(job_id: str):
         if img is not None:
             image_bytes = _download_output(img)
             image_bytes = _resize_to_output_size(image_bytes)
+            if blur_face:
+                image_bytes = _blur_face(image_bytes)
             return {
                 "status": "completed",
                 "image_base64": base64.b64encode(image_bytes).decode("ascii"),
