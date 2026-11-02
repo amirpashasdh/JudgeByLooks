@@ -220,8 +220,9 @@ def _get_face_cascade() -> cv2.CascadeClassifier:
 def _blur_face(image_bytes: bytes) -> bytes:
     """TEST ONLY, toggled via ?blur_face=true on the status endpoint -- not
     wired into Comfy at all, just post-processes the already-downloaded image,
-    so it costs nothing extra and is trivial to turn back off. Deliberately
-    not done as a Comfy graph node: that would mean wiring a face-landmark
+    so it costs nothing extra and is trivial to turn back off (measured ~1.2s
+    of the request, negligible against generation time). Deliberately not
+    done as a Comfy graph node: that would mean wiring a face-landmark
     detector + mask + composite (several new, untested nodes) and paying for
     a fresh 5-6min generation on every test iteration just to check the crop.
 
@@ -230,6 +231,11 @@ def _blur_face(image_bytes: bytes) -> bytes:
     cascade throws occasional false positives elsewhere in the frame (e.g.
     shoe texture), and the person's head is always up there in this
     composition, so this reliably picks the real face over noise.
+
+    Circular (feathered ellipse), not a hard rectangle: blur the whole frame
+    once, then blend the blurred version back in only within a soft-edged
+    oval over the face -- a rectangle with a visible hard edge looked wrong,
+    this reads as an intentional anonymization crop instead of a glitch.
     """
     arr = np.frombuffer(image_bytes, dtype=np.uint8)
     img = cv2.imdecode(arr, cv2.IMREAD_COLOR)
@@ -247,11 +253,21 @@ def _blur_face(image_bytes: bytes) -> bytes:
         return image_bytes
 
     x, y, fw, fh = candidates[0]
-    pad_x, pad_y = int(fw * 0.35), int(fh * 0.45)
+    pad_x, pad_y = int(fw * 0.45), int(fh * 0.55)
     x0, y0 = max(0, x - pad_x), max(0, y - pad_y)
     x1, y1 = min(w, x + fw + pad_x), min(h, y + fh + pad_y)
-    roi = img[y0:y1, x0:x1]
-    img[y0:y1, x0:x1] = cv2.GaussianBlur(roi, (0, 0), sigmaX=20)
+    cx, cy = (x0 + x1) // 2, (y0 + y1) // 2
+    rx, ry = (x1 - x0) // 2, (y1 - y0) // 2
+
+    heavy_blur = cv2.GaussianBlur(img, (0, 0), sigmaX=45)
+
+    mask = np.zeros((h, w), dtype=np.uint8)
+    cv2.ellipse(mask, (cx, cy), (rx, ry), 0, 0, 360, 255, -1)
+    mask = cv2.GaussianBlur(mask, (0, 0), sigmaX=15)  # feather the edge
+
+    mask3 = cv2.merge([mask, mask, mask]).astype(np.float32) / 255.0
+    out = img.astype(np.float32) * (1 - mask3) + heavy_blur.astype(np.float32) * mask3
+    img = out.astype(np.uint8)
 
     ok, buf = cv2.imencode(".png", img)
     return buf.tobytes() if ok else image_bytes
