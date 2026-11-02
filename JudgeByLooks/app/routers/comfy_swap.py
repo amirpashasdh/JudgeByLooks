@@ -85,18 +85,18 @@ def _workflow(base_scene_name: str, user_photo_name: str) -> dict:
         },
         NANO_BANANA_NODE_ID: {
             "inputs": {
-                # Reverted to the exact config that was confirmed to produce correct,
-                # matching backgrounds before any speed optimization: full "Gemini Nano
-                # Banana 2.1" model (not the Lite variant) at 2K with HIGH thinking.
-                # The Lite model, even at HIGH thinking, is the thing Pasha flagged as
-                # "not good" after a live comparison -- this isn't just a thinking_level
-                # knob, the Lite model itself isn't reliable for this exact-background
-                # requirement. This is back to 5-6+ min per job, well past the earlier
-                # 1-minute target -- fidelity is the priority now per Pasha's direction.
+                # Full "Gemini Nano Banana 2.1" model (not Lite) confirmed to produce
+                # correct, matching backgrounds -- that's the fixed point now, not up
+                # for retesting. The free variable here is thinking_level: unlike Lite
+                # (MINIMAL/HIGH only), the full 2.1 model also supports MEDIUM. This is
+                # a controlled, isolated test -- model and resolution unchanged from the
+                # confirmed-good config, only reasoning depth drops one notch -- to see
+                # whether it's meaningfully faster while keeping the same model's
+                # (much better than Lite's) scene-fidelity understanding.
                 "model": "Gemini Nano Banana 2.1",
                 "model.aspect_ratio": "auto",
                 "model.resolution": "2K",
-                "model.thinking_level": "HIGH",
+                "model.thinking_level": "MEDIUM",
                 "model.images.image_1": [BASE_SCENE_NODE_ID, 0],
                 "model.images.image_2": [USER_PHOTO_NODE_ID, 0],
                 "seed": random.randint(0, 2**31 - 1),
